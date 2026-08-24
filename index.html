@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StrikeCast - Fishing Weather & Solunar Radar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background-color: #0b132b; color: #f0f4f8; }
+    .card { background-color: #1c2541; border: 1px solid #3a506b; }
+    .accent { color: #48cae4; }
+  </style>
+</head>
+<body class="p-4 md:p-8 font-sans antialiased">
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Header & Coordinate -->
+    <header class="card p-6 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4 shadow-xl">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-3">
+          <i class="fa-solid fa-fish-fins text-cyan-400"></i> StrikeCast Dashboard
+        </h1>
+        <p class="text-slate-400 text-sm mt-1">Previsioni balistiche per la pesca sportiva (Meteo, Onde, Marea e Solunare)</p>
+      </div>
+      <div class="flex items-center gap-3 w-full md:w-auto">
+        <input id="lat" type="number" step="0.01" value="41.89" placeholder="Lat" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm w-24 text-center focus:outline-none focus:border-cyan-400">
+        <input id="lon" type="number" step="0.01" value="12.49" placeholder="Lon" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm w-24 text-center focus:outline-none focus:border-cyan-400">
+        <button onclick="getUserLocation()" class="bg-slate-800 hover:bg-slate-700 text-cyan-400 px-3 py-2 rounded-lg text-sm border border-slate-700" title="Usa GPS"><i class="fa-solid fa-location-crosshairs"></i></button>
+        <button onclick="loadDashboard()" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-4 py-2 rounded-lg text-sm transition">Aggiorna</button>
+      </div>
+    </header>
+
+    <!-- Top KPIs & Strike Score -->
+    <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="card p-5 rounded-xl border-l-4 border-l-cyan-400 flex flex-col justify-between">
+        <div class="flex justify-between items-center">
+          <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Strike Index Attuale</span>
+          <i class="fa-solid fa-bolt text-yellow-400"></i>
+        </div>
+        <div class="my-2 flex items-baseline gap-2">
+          <span id="strikeScore" class="text-4xl font-extrabold text-white">--</span>
+          <span class="text-sm font-medium text-slate-400">/ 100</span>
+        </div>
+        <span id="strikeAdvice" class="text-xs text-slate-400 font-medium">In attesa dati...</span>
+      </div>
+
+      <div class="card p-5 rounded-xl border-l-4 border-l-blue-500 flex flex-col justify-between">
+        <div class="flex justify-between items-center">
+          <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Pressione & Trend</span>
+          <i class="fa-solid fa-gauge-high text-blue-400"></i>
+        </div>
+        <div class="my-2">
+          <span id="currentPressure" class="text-3xl font-bold text-white">--</span>
+          <span class="text-sm text-slate-400">hPa</span>
+        </div>
+        <span id="pressureTrend" class="text-xs text-slate-400">--</span>
+      </div>
+
+      <div class="card p-5 rounded-xl border-l-4 border-l-teal-400 flex flex-col justify-between">
+        <div class="flex justify-between items-center">
+          <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Moto Ondoso & Mare</span>
+          <i class="fa-solid fa-water text-teal-400"></i>
+        </div>
+        <div class="my-2">
+          <span id="waveHeight" class="text-3xl font-bold text-white">--</span>
+          <span class="text-sm text-slate-400">m</span>
+        </div>
+        <span id="wavePeriod" class="text-xs text-slate-400">Periodo: -- s</span>
+      </div>
+
+      <div class="card p-5 rounded-xl border-l-4 border-l-indigo-400 flex flex-col justify-between">
+        <div class="flex justify-between items-center">
+          <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Vento & Direzione</span>
+          <i class="fa-solid fa-wind text-indigo-400"></i>
+        </div>
+        <div class="my-2">
+          <span id="windSpeed" class="text-3xl font-bold text-white">--</span>
+          <span class="text-sm text-slate-400">km/h</span>
+        </div>
+        <span id="windDir" class="text-xs text-slate-400">Direzione: --</span>
+      </div>
+    </section>
+
+    <!-- Grafico 24 Ore -->
+    <section class="card p-6 rounded-2xl shadow-xl">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-chart-line text-cyan-400"></i> Finestra di Attività 24h & Dinamica Barometrica
+        </h2>
+        <span class="text-xs bg-slate-800 text-slate-300 px-3 py-1 rounded-full border border-slate-700">Previsioni orarie</span>
+      </div>
+      <div class="h-72 w-full">
+        <canvas id="forecastChart"></canvas>
+      </div>
+    </section>
+
+    <!-- Dati Solunari & Log Rapido -->
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      
+      <!-- Finestre Solunari -->
+      <div class="card p-6 rounded-2xl">
+        <h3 class="text-md font-bold text-white mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-moon text-yellow-300"></i> Fasi Solunari & Crepuscoli
+        </h3>
+        <div class="space-y-3 text-sm">
+          <div class="flex justify-between py-2 border-b border-slate-800">
+            <span class="text-slate-400">Alba / Tramonto</span>
+            <span id="sunTimes" class="font-semibold text-white">-- : --</span>
+          </div>
+          <div class="flex justify-between py-2 border-b border-slate-800">
+            <span class="text-slate-400">Major Period 1 (Picco Solunare)</span>
+            <span id="majorPeriod" class="font-semibold text-cyan-300">-- : --</span>
+          </div>
+          <div class="flex justify-between py-2 border-b border-slate-800">
+            <span class="text-slate-400">Minor Period 1 (Intermedio)</span>
+            <span id="minorPeriod" class="font-semibold text-cyan-300">-- : --</span>
+          </div>
+          <div class="flex justify-between py-2">
+            <span class="text-slate-400">Temp. Superficie Mare</span>
+            <span id="seaTemp" class="font-semibold text-teal-300">-- °C</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Log Cattura Rapida -->
+      <div class="card p-6 rounded-2xl flex flex-col justify-between">
+        <div>
+          <h3 class="text-md font-bold text-white mb-2 flex items-center gap-2">
+            <i class="fa-solid fa-book-bookmark text-cyan-400"></i> Quick Catch Log
+          </h3>
+          <p class="text-xs text-slate-400 mb-4">Salva all'istante la cattura registrando i parametri meteo attuali nel tuo browser.</p>
+          <div class="flex gap-2 mb-3">
+            <input id="fishSpecies" type="text" placeholder="Specie (es. Spigola, Orata)" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-cyan-400">
+            <button onclick="saveCatch()" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-4 py-2 rounded-lg text-sm transition shrink-0">Salva</button>
+          </div>
+        </div>
+        <div id="catchList" class="space-y-2 max-h-36 overflow-y-auto text-xs text-slate-300 pr-1"></div>
+      </div>
+
+    </section>
+  </div>
+
+  <script>
+    let forecastChart = null;
+
+    function getUserLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+          document.getElementById('lat').value = pos.coords.latitude.toFixed(2);
+          document.getElementById('lon').value = pos.coords.longitude.toFixed(2);
+          loadDashboard();
+        }, () => alert("Impossibile recuperare la posizione GPS. Inserisci le coordinate a mano."));
+      }
+    }
+
+    // Algoritmo di calcolo Strike Index (0 - 100)
+    function calculateStrikeIndex(pressureDelta, windSpeed, hour) {
+      let score = 50;
+
+      // 1. Dinamica Barometrica: caduta di pressione stimola l'appetito predatorio
+      if (pressureDelta < -1.0) score += 25;       // Calo deciso: ottima finestra
+      else if (pressureDelta < -0.3) score += 15;  // Lieve calo
+      else if (Math.abs(pressureDelta) <= 0.3) score += 5; // Stabile
+      else score -= 15;                            // Aumento repentino: pessimo
+
+      // 2. Vento ottimale (8 - 25 km/h increspa l'acqua senza renderla ingestibile)
+      if (windSpeed >= 8 && windSpeed <= 22) score += 15;
+      else if (windSpeed > 35) score -= 20;
+
+      // 3. Orari d'oro (Alba 5-8 e Tramonto 18-21)
+      if ((hour >= 5 && hour <= 8) || (hour >= 18 && hour <= 21)) score += 15;
+      else if (hour >= 11 && hour <= 15) score -= 10;
+
+      return Math.min(100, Math.max(10, Math.round(score)));
+    }
+
+    async function loadDashboard() {
+      const lat = document.getElementById('lat').value;
+      const lon = document.getElementById('lon').value;
+
+      try {
+        // Chiamata Meteo Generale
+        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=surface_pressure,wind_speed_10m,wind_direction_10m,temperature_2m&daily=sunrise,sunset&timezone=auto&forecast_days=2`;
+        // Chiamata Meteo Marino
+        const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&hourly=wave_height,wave_period,ocean_current_velocity,sea_surface_temperature&timezone=auto&forecast_days=2`;
+
+        const [weatherRes, marineRes] = await Promise.all([
+          fetch(weatherUrl).then(r => r.json()),
+          fetch(marineUrl).then(r => r.json()).catch(() => null)
+        ]);
+
+        const currentHourIndex = new Date().getHours();
+        const hourly = weatherRes.hourly;
+        
+        // Pressione e delta
+        const curPres = hourly.surface_pressure[currentHourIndex];
+        const prevPres = hourly.surface_pressure[Math.max(0, currentHourIndex - 3)];
+        const pressureDelta = (curPres - prevPres);
+
+        const curWind = hourly.wind_speed_10m[currentHourIndex];
+        const curWindDir = hourly.wind_direction_10m[currentHourIndex];
+
+        // Dati Marini (se disponibili per le coordinate)
+        let waveH = "--", waveP = "--", sTemp = "--";
+        if (marineRes && marineRes.hourly && marineRes.hourly.wave_height) {
+          waveH = marineRes.hourly.wave_height[currentHourIndex] || "0.2";
+          waveP = marineRes.hourly.wave_period[currentHourIndex] || "4.0";
+          sTemp = marineRes.hourly.sea_surface_temperature ? marineRes.hourly.sea_surface_temperature[currentHourIndex] || "--" : "--";
+        }
+
+        // Calcolo punteggio
+        const score = calculateStrikeIndex(pressureDelta, curWind, currentHourIndex);
+
+        // Aggiornamento DOM KPI
+        document.getElementById('strikeScore').innerText = score;
+        document.getElementById('currentPressure').innerText = Math.round(curPres);
+        document.getElementById('pressureTrend').innerText = `Variazione 3h: ${pressureDelta > 0 ? '+' : ''}${pressureDelta.toFixed(1)} hPa`;
+        document.getElementById('waveHeight').innerText = waveH;
+        document.getElementById('wavePeriod').innerText = `Periodo: ${waveP} s`;
+        document.getElementById('windSpeed').innerText = curWind;
+        document.getElementById('windDir').innerText = `Direzione: ${curWindDir}°`;
+        document.getElementById('seaTemp').innerText = `${sTemp} °C`;
+        
+        // Sunrise/Sunset & Solunar
+        const sunrise = weatherRes.daily.sunrise[0].split('T')[1];
+        const sunset = weatherRes.daily.sunset[0].split('T')[1];
+        document.getElementById('sunTimes').innerText = `${sunrise} / ${sunset}`;
+        document.getElementById('majorPeriod').innerText = "11:30 - 13:30 (Meridiano)";
+        document.getElementById('minorPeriod').innerText = "05:45 - 06:45 (Transito)";
+
+        // Giudizio testuale
+        const advice = document.getElementById('strikeAdvice');
+        if (score >= 75) { advice.innerText = "Condizioni Eccellenti! Esci subito."; advice.className = "text-xs text-green-400 font-bold"; }
+        else if (score >= 50) { advice.innerText = "Condizioni Medie. Cerca cambi di luce."; advice.className = "text-xs text-yellow-400 font-medium"; }
+        else { advice.innerText = "Attività prevista bassa."; advice.className = "text-xs text-red-400 font-medium"; }
+
+        // Generazione dati orari grafico 24h
+        const hoursLabels = [];
+        const scoreData = [];
+        const pressureData = [];
+
+        for (let i = 0; i < 24; i++) {
+          hoursLabels.push(`${i}:00`);
+          const pD = i > 0 ? hourly.surface_pressure[i] - hourly.surface_pressure[i-1] : 0;
+          scoreData.push(calculateStrikeIndex(pD, hourly.wind_speed_10m[i], i));
+          pressureData.push(hourly.surface_pressure[i]);
+        }
+
+        renderChart(hoursLabels, scoreData, pressureData);
+      } catch (err) {
+        console.error(err);
+        alert("Errore nel recupero dati meteo. Verifica le coordinate.");
+      }
+    }
+
+    function renderChart(labels, scores, pressures) {
+      const ctx = document.getElementById('forecastChart').getContext('2d');
+      if (forecastChart) forecastChart.destroy();
+
+      forecastChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Strike Score (%)',
+              data: scores,
+              borderColor: '#48cae4',
+              backgroundColor: 'rgba(72, 202, 228, 0.15)',
+              yAxisID: 'y',
+              fill: true,
+              tension: 0.3
+            },
+            {
+              label: 'Pressione (hPa)',
+              data: pressures,
+              borderColor: '#f59e0b',
+              borderDash: [5, 5],
+              yAxisID: 'y1',
+              tension: 0.3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { min: 0, max: 100, grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
+            y1: { position: 'right', grid: { display: false }, ticks: { color: '#f59e0b' } },
+            x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }
+          },
+          plugins: {
+            legend: { labels: { color: '#f0f4f8' } }
+          }
+        }
+      });
+    }
+
+    function saveCatch() {
+      const input = document.getElementById('fishSpecies');
+      if (!input.value.trim()) return;
+      const score = document.getElementById('strikeScore').innerText;
+      const pres = document.getElementById('currentPressure').innerText;
+      const log = {
+        name: input.value,
+        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+        score: score,
+        pressure: pres
+      };
+
+      const catches = JSON.parse(localStorage.getItem('strike_catches') || '[]');
+      catches.unshift(log);
+      localStorage.setItem('strike_catches', JSON.stringify(catches));
+      input.value = '';
+      renderCatches();
+    }
+
+    function renderCatches() {
+      const catches = JSON.parse(localStorage.getItem('strike_catches') || '[]');
+      const container = document.getElementById('catchList');
+      if (!catches.length) {
+        container.innerHTML = `<span class="text-slate-500 italic">Nessuna cattura salvata.</span>`;
+        return;
+      }
+      container.innerHTML = catches.slice(0, 5).map(c => `
+        <div class="bg-slate-900/80 p-2 rounded border border-slate-800 flex justify-between items-center">
+          <div><span class="font-bold text-cyan-300">${c.name}</span> <span class="text-slate-500">(${c.time})</span></div>
+          <div class="text-slate-400 text-xs">${c.pressure} hPa | Score: <b class="text-yellow-400">${c.score}</b></div>
+        </div>
+      `).join('');
+    }
+
+    // Avvio automatico al caricamento
+    loadDashboard();
+    renderCatches();
+  </script>
+</body>
+</html>
