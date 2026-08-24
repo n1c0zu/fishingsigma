@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
 <style>
   :root{
     --navy-deep:#061826;
@@ -53,25 +54,35 @@
     backdrop-filter:blur(10px);
     border-bottom:1px solid var(--line);
   }
-  .navbar{display:flex; align-items:center; justify-content:space-between; padding:16px 24px;}
+  .navbar{display:flex; align-items:center; justify-content:space-between; padding:16px 24px; flex-wrap:wrap; gap:10px;}
   .logo{font-family:'Fraunces',serif; font-weight:700; font-size:1.3rem; letter-spacing:0.02em;}
   .logo span{color:var(--rust);}
-  nav ul{display:flex; gap:28px; list-style:none;}
+  nav ul{display:flex; gap:28px; list-style:none; flex-wrap:wrap; row-gap:6px;}
   nav a{font-size:0.85rem; text-decoration:none; color:var(--foam); opacity:0.75; transition:opacity .2s;}
   nav a:hover{opacity:1;}
-  @media(max-width:760px){ nav ul{gap:14px;} nav a{font-size:0.72rem;} }
+  @media(max-width:760px){
+    .navbar{padding:12px 16px;}
+    nav ul{gap:12px 16px; width:100%; justify-content:flex-start;}
+    nav a{font-size:0.72rem;}
+  }
+  @media(max-width:420px){ nav ul{gap:10px 14px;} nav a{font-size:0.68rem;} }
 
   /* ---------- HERO ---------- */
   .hero{padding:64px 0 40px;}
   .hero h1{font-size:clamp(2.1rem,5vw,3.4rem); font-weight:600; max-width:780px; line-height:1.05;}
   .hero h1 em{font-style:italic; color:var(--sand);}
   .hero p.lead{max-width:620px; margin-top:18px; color:rgba(245,241,230,0.72); font-size:1.05rem;}
+  @media(max-width:600px){
+    .hero{padding:40px 0 28px;}
+    .hero p.lead{font-size:0.95rem;}
+  }
 
   /* ---------- GESTIONE PUNTI ---------- */
   .points-panel{
     margin-top:36px; border:1px solid var(--line-strong); border-radius:4px;
     background:rgba(13,44,62,0.35); padding:22px;
   }
+  @media(max-width:600px){ .points-panel{padding:16px; margin-top:24px;} }
   .points-panel h2{font-size:1.05rem; font-weight:600; margin-bottom:4px;}
   .points-panel .hint{font-size:0.82rem; color:rgba(245,241,230,0.6); margin-bottom:16px;}
   .search-row{display:flex; gap:10px; flex-wrap:wrap;}
@@ -95,6 +106,11 @@
   }
   .btn-outline:hover{border-color:var(--rust); color:var(--rust);}
   .btn-outline.active{border-color:var(--rust); color:var(--rust); background:rgba(217,98,43,0.1);}
+  @media(max-width:600px){
+    .search-row{flex-direction:column; align-items:stretch;}
+    #searchInput{min-width:0; font-size:16px;} /* 16px: evita lo zoom automatico di iOS sul focus */
+    .btn, .btn-outline{width:100%; padding:13px 16px; text-align:center;}
+  }
   .search-results{margin-top:10px; display:flex; flex-direction:column; gap:6px;}
   .search-result{
     text-align:left; background:var(--navy-mid); border:1px solid var(--line);
@@ -115,6 +131,13 @@
     padding:10px 12px; font-family:'Inter',sans-serif; font-size:0.85rem; border-radius:2px;
   }
   .coord-input{width:110px;}
+  @media(max-width:600px){
+    .add-form{flex-direction:column; align-items:stretch; gap:14px;}
+    .add-form .field{width:100%;}
+    .add-form input, .add-form select{width:100%; font-size:16px;}
+    .coord-input{width:100%;}
+    .add-form .btn, .add-form .btn-outline{width:100%;}
+  }
 
   .spot-chips{margin-top:18px; display:flex; flex-wrap:wrap; gap:8px;}
   .chip{
@@ -130,6 +153,23 @@
   }
   .chip .rm:hover{background:var(--rust); color:var(--navy-deep);}
   .empty-note{font-size:0.85rem; color:rgba(245,241,230,0.45); margin-top:14px; font-family:'IBM Plex Mono',monospace;}
+
+  .dash-wrap{margin-top:22px; padding-top:20px; border-top:1px dashed var(--line-strong);}
+  .dash-head{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;}
+  .dash-head h3{font-size:0.95rem; font-weight:600;}
+  .dash-scroll{overflow-x:auto; border:1px solid var(--line-strong); border-radius:4px;}
+  table.dash-table{border-collapse:collapse; width:100%; min-width:560px;}
+  table.dash-table th, table.dash-table td{padding:10px 12px; text-align:left; font-size:0.8rem; border-bottom:1px solid var(--line); white-space:nowrap;}
+  table.dash-table th{font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.05em; font-size:0.62rem; color:var(--rust); background:rgba(6,24,38,0.5);}
+  table.dash-table tr.dash-row{cursor:pointer;}
+  table.dash-table tr.dash-row:hover{background:rgba(245,241,230,0.04);}
+  table.dash-table tr.dash-row.selected{background:rgba(217,98,43,0.1);}
+  .score-pill{font-family:'IBM Plex Mono',monospace; font-size:0.72rem; padding:3px 9px; border-radius:20px; border:1px solid var(--line-strong); display:inline-block;}
+  .score-pill.good{border-color:var(--seaweed); color:#9fd39a;}
+  .score-pill.mid{border-color:var(--rust); color:#f0a878;}
+  .score-pill.low{border-color:rgba(245,241,230,0.3); color:rgba(245,241,230,0.5);}
+  .dash-hint{margin-top:10px; font-size:0.74rem; color:rgba(245,241,230,0.45); font-family:'IBM Plex Mono',monospace;}
+  @media(max-width:600px){ .dash-head{flex-direction:column; align-items:stretch;} .dash-head .btn-outline{width:100%;} }
 
   /* ---------- PLANCIA / DASHBOARD ---------- */
   .plancia{
@@ -151,6 +191,11 @@
     border-top:1px solid var(--line);
   }
   @media(max-width:900px){ .gauges{grid-template-columns:repeat(2,1fr);} }
+  @media(max-width:640px){
+    .gauges{grid-template-columns:1fr;}
+    .gauge{grid-column:span 1 !important; min-height:auto; padding:18px 16px;}
+    .gauge-value{font-size:1.5rem;}
+  }
   .gauge{
     padding:22px 18px; border-right:1px solid var(--line); border-bottom:1px solid var(--line);
     display:flex; flex-direction:column; gap:10px; min-height:150px; justify-content:space-between;
@@ -172,6 +217,7 @@
 
   /* ---------- SECTIONS ---------- */
   section{padding:64px 0;}
+  @media(max-width:600px){ section{padding:40px 0;} }
   section.alt{background:rgba(13,44,62,0.28); border-top:1px solid var(--line); border-bottom:1px solid var(--line);}
   .section-head{margin-bottom:34px; max-width:640px;}
   .section-head h2{font-size:clamp(1.5rem,3vw,2.1rem); font-weight:600; margin-top:10px;}
@@ -179,10 +225,30 @@
 
   /* map */
   #map{height:460px; width:100%; border:1px solid var(--line-strong); border-radius:4px; cursor:crosshair;}
-  #map .leaflet-tile-pane{filter:invert(94%) hue-rotate(180deg) brightness(0.95) contrast(0.88) saturate(0.9);}
+  #map .osm-base-tile{filter:invert(94%) hue-rotate(180deg) brightness(0.95) contrast(0.88) saturate(0.9);}
+  #map .leaflet-control-layers{
+    background:var(--navy-mid); color:var(--foam); border:1px solid var(--line-strong);
+    font-family:'Inter',sans-serif; font-size:0.8rem; padding:10px;
+  }
+  #map .leaflet-control-layers-base{display:none;}
+  #map .leaflet-control-layers label{margin-bottom:6px; display:block;}
+  @media(max-width:600px){ #map{height:340px;} }
   .map-note{margin-top:12px; font-size:0.8rem; color:rgba(245,241,230,0.55); font-family:'IBM Plex Mono',monospace;}
 
   /* forecast table */
+  .filter-row{display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap; margin-bottom:24px; padding:18px; border:1px solid var(--line-strong); border-radius:4px; background:rgba(13,44,62,0.25);}
+  .filter-row input[type="date"], .filter-row input[type="time"]{padding:10px 12px;}
+  @media(max-width:600px){
+    .filter-row{flex-direction:column; align-items:stretch;}
+    .filter-row .field{width:100%;}
+    .filter-row input{width:100%; font-size:16px;}
+    .filter-row .btn-outline{width:100%;}
+  }
+  .window-summary{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line-strong); border:1px solid var(--line-strong); margin-bottom:16px; border-radius:4px; overflow:hidden;}
+  @media(max-width:700px){ .window-summary{grid-template-columns:repeat(2,1fr);} }
+  .window-summary .cell{background:var(--navy-deep); padding:16px; }
+  .window-summary .cell .l{font-family:'IBM Plex Mono',monospace; font-size:0.64rem; text-transform:uppercase; letter-spacing:.08em; color:rgba(245,241,230,0.5);}
+  .window-summary .cell .v{font-family:'IBM Plex Mono',monospace; font-size:1.4rem; margin-top:6px;}
   .fc-scroll{overflow-x:auto; border:1px solid var(--line-strong); border-radius:4px;}
   table.fc{border-collapse:collapse; width:100%; min-width:760px;}
   table.fc th, table.fc td{padding:12px 14px; text-align:left; font-size:0.82rem; border-bottom:1px solid var(--line); white-space:nowrap;}
@@ -297,7 +363,23 @@
       </div>
 
       <div class="spot-chips" id="spotChips"></div>
-      <div class="empty-note" id="emptyNote">Non hai ancora aggiunto nessun punto. I punti restano salvati finché tieni aperta questa pagina.</div>
+      <div class="empty-note" id="emptyNote">Non hai ancora aggiunto nessun punto. Una volta salvati, restano nel browser anche se chiudi la pagina.</div>
+
+      <div class="dash-wrap" id="dashWrap" style="display:none;">
+        <div class="dash-head">
+          <h3>I tuoi punti salvati</h3>
+          <button class="btn-outline" id="refreshScoresBtn">Calcola punteggi mattina/sera</button>
+        </div>
+        <div class="dash-scroll">
+          <table class="dash-table" id="dashTable">
+            <thead>
+              <tr><th>Punto</th><th>Tipo</th><th>Coordinate</th><th>Punteggio mattina</th><th>Punteggio sera</th><th></th></tr>
+            </thead>
+            <tbody id="dashBody"></tbody>
+          </table>
+        </div>
+        <div class="dash-hint">Finestra mattina: 1h prima – 3h dopo l'alba. Finestra sera: 1h prima – 3h dopo il tramonto. Calcolo basato su vento medio, onda media e fase lunare del giorno.</div>
+      </div>
     </div>
 
     <div class="plancia" id="plancia">
@@ -309,13 +391,33 @@
         <div class="plancia-empty">Aggiungi o seleziona un punto per vedere vento, mare, pressione e luna in tempo reale.</div>
       </div>
     </div>
+
+    <div class="plancia" id="extraPlancia" style="margin-top:16px;">
+      <div class="plancia-head">
+        <h2>Dati aggiuntivi</h2>
+        <div class="updated mono">umidità · rugiada · UV · visibilità · onda di vento e mare lungo · corrente</div>
+      </div>
+      <div class="gauges" id="extraGauges">
+        <div class="plancia-empty">Compaiono qui non appena selezioni un punto.</div>
+      </div>
+    </div>
+
+    <div class="plancia" id="sunMoonPlancia" style="margin-top:16px;">
+      <div class="plancia-head">
+        <h2>Sole, luna e finestre solunari</h2>
+        <div class="updated mono" id="sunMoonUpdated"></div>
+      </div>
+      <div class="gauges" id="sunMoonGauges">
+        <div class="plancia-empty">Calcolati localmente da SunCalc, nessuna chiamata di rete necessaria.</div>
+      </div>
+    </div>
   </section>
 
   <section id="mappa" class="wrap alt">
     <div class="section-head">
       <div class="eyebrow">Carta nautica</div>
       <h2>La tua mappa</h2>
-      <p>Vuota finché non la riempi tu. Attiva "Aggiungi dalla mappa" qui sopra e clicca ovunque per segnare un nuovo punto, oppure tocca un punto già presente per caricarne i dati.</p>
+      <p>Vuota finché non la riempi tu. Attiva "Aggiungi dalla mappa" qui sopra e clicca ovunque per segnare un nuovo punto, oppure tocca un punto già presente per caricarne i dati. In alto a destra puoi accendere i livelli di batimetria (EMODnet in Europa, GEBCO a copertura globale) e la segnaletica nautica di OpenSeaMap.</p>
     </div>
     <div id="map"></div>
     <div class="map-note">© OpenStreetMap contributors · geocoding e dati meteomarini © Open-Meteo.com — nessuna chiave API richiesta</div>
@@ -323,22 +425,36 @@
 
   <section id="meteo" class="wrap">
     <div class="section-head">
-      <div class="eyebrow">Previsione a 5 giorni</div>
+      <div class="eyebrow">Previsioni personalizzabili</div>
       <h2>Vento, mare e pressione</h2>
-      <p>La tabella si aggiorna in base al punto selezionato. Dove il servizio marino non copre la zona (es. acque interne), vedrai solo i dati meteo.</p>
+      <p>Nessuna data: vedi la panoramica dei prossimi 7 giorni con le medie nelle finestre migliori (alba e tramonto). Solo data: vedi l'andamento ora per ora di quel giorno. Data + orario: vedi la media della finestra scelta più il dettaglio orario.</p>
     </div>
-    <div class="fc-scroll">
-      <table class="fc" id="fcTable">
-        <thead>
-          <tr>
-            <th>Giorno</th><th>Meteo</th><th>Temp</th><th>Vento</th><th>Raffiche</th>
-            <th>Moto ondoso</th><th>Periodo onda</th><th>Temp. mare</th><th>Pressione</th><th>Alba / Tramonto</th>
-          </tr>
-        </thead>
-        <tbody id="fcBody">
-          <tr><td colspan="10" class="loading">Aggiungi un punto per vedere le previsioni.</td></tr>
-        </tbody>
-      </table>
+
+    <div class="filter-row">
+      <div class="field">
+        <label>Data (opzionale)</label>
+        <input type="date" id="filterDate" class="mono">
+      </div>
+      <div class="field">
+        <label>Da (opzionale)</label>
+        <input type="time" id="filterFrom" class="mono">
+      </div>
+      <div class="field">
+        <label>A (opzionale)</label>
+        <input type="time" id="filterTo" class="mono">
+      </div>
+      <button class="btn-outline" id="clearFilterBtn">Azzera filtro</button>
+    </div>
+
+    <div id="forecastContainer">
+      <div class="fc-scroll">
+        <table class="fc" id="fcTable">
+          <thead><tr id="fcHead"></tr></thead>
+          <tbody id="fcBody">
+            <tr><td colspan="13" class="loading">Aggiungi un punto per vedere le previsioni.</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -368,7 +484,7 @@
 </main>
 
 <footer class="wrap">
-  Progetto indipendente senza fini di lucro. Meteo, mare e geocoding: <a href="https://open-meteo.com" target="_blank">Open-Meteo.com</a> (API gratuita, licenza CC-BY 4.0). Mappa: <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>, tile via CARTO. I tuoi punti restano solo in questa sessione del browser: non vengono inviati né salvati da nessuna parte. Rispetta sempre le misure minime, i periodi di fermo biologico e i regolamenti locali prima di pescare.
+  Progetto indipendente senza fini di lucro. Meteo, mare e geocoding: <a href="https://open-meteo.com" target="_blank">Open-Meteo.com</a> (API gratuita, licenza CC-BY 4.0). Mappa: <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>. Batimetria: <a href="https://emodnet.ec.europa.eu/en/bathymetry" target="_blank">EMODnet Bathymetry</a> e <a href="https://www.gebco.net" target="_blank">GEBCO</a>. Segnaletica nautica: <a href="https://www.openseamap.org" target="_blank">OpenSeaMap</a>. Sole e luna: calcolati localmente con <a href="https://github.com/mourner/suncalc" target="_blank">SunCalc</a>. I tuoi punti sono salvati nella memoria locale di questo browser (localStorage): restano anche chiudendo la pagina, ma solo su questo dispositivo e non vengono inviati da nessuna parte. Rispetta sempre le misure minime, i periodi di fermo biologico e i regolamenti locali prima di pescare.
 </footer>
 
 <script>
@@ -379,6 +495,18 @@ let SPOTS = [];
 let currentSpot = null;
 let mapAddMode = false;
 let pendingCoords = null;
+let lastWeather = null, lastMarine = null;
+const STORAGE_KEY = "lenza_spots_v1";
+
+function loadSpotsFromStorage(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){ SPOTS = JSON.parse(raw); }
+  }catch(e){ SPOTS = []; }
+}
+function saveSpotsToStorage(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(SPOTS)); }catch(e){ /* storage non disponibile: i punti restano solo in sessione */ }
+}
 
 /* ---------------------------------------------------------
    UTILS
@@ -499,6 +627,7 @@ document.getElementById('confirmAdd').addEventListener('click', ()=>{
   }
   const spot = {id:"s"+Date.now(), name, lat, lon, type};
   SPOTS.push(spot);
+  saveSpotsToStorage();
   document.getElementById('addForm').classList.remove('visible');
   renderChips();
   addMarker(spot);
@@ -529,12 +658,15 @@ document.getElementById('locateBtn').addEventListener('click', ()=>{
 function renderChips(){
   const box = document.getElementById('spotChips');
   const empty = document.getElementById('emptyNote');
+  const dashWrap = document.getElementById('dashWrap');
   if(SPOTS.length === 0){
     box.innerHTML = "";
     empty.style.display = "block";
+    dashWrap.style.display = "none";
     return;
   }
   empty.style.display = "none";
+  dashWrap.style.display = "block";
   box.innerHTML = SPOTS.map(s=>`
     <div class="chip ${currentSpot && currentSpot.id===s.id ? 'selected':''}" data-id="${s.id}">
       <span>${s.name}</span>
@@ -553,15 +685,39 @@ function renderChips(){
       removeSpot(rm.dataset.rm);
     });
   });
+  renderDashTable();
+}
+function renderDashTable(){
+  const body = document.getElementById('dashBody');
+  body.innerHTML = SPOTS.map(s=>`
+    <tr class="dash-row ${currentSpot && currentSpot.id===s.id ? 'selected':''}" data-id="${s.id}">
+      <td>${s.name}</td>
+      <td>${TYPE_LABEL[s.type] || 'Altro'}</td>
+      <td class="mono">${s.lat.toFixed(3)}, ${s.lon.toFixed(3)}</td>
+      <td id="score-am-${s.id}"><span class="score-pill low">da calcolare</span></td>
+      <td id="score-pm-${s.id}"><span class="score-pill low">da calcolare</span></td>
+      <td><span class="rm" data-rm="${s.id}">×</span></td>
+    </tr>
+  `).join('');
+  body.querySelectorAll('.dash-row').forEach(row=>{
+    row.addEventListener('click', e=>{
+      if(e.target.dataset.rm) return;
+      selectSpot(row.dataset.id);
+    });
+  });
+  body.querySelectorAll('.rm').forEach(rm=>{
+    rm.addEventListener('click', e=>{ e.stopPropagation(); removeSpot(rm.dataset.rm); });
+  });
 }
 function removeSpot(id){
   SPOTS = SPOTS.filter(s=>s.id!==id);
+  saveSpotsToStorage();
   if(markers[id]){ map.removeLayer(markers[id]); delete markers[id]; }
   if(currentSpot && currentSpot.id===id){
     currentSpot = null;
     document.getElementById('plancia-title').textContent = "Plancia";
     document.getElementById('gauges').innerHTML = '<div class="plancia-empty">Aggiungi o seleziona un punto per vedere vento, mare, pressione e luna in tempo reale.</div>';
-    document.getElementById('fcBody').innerHTML = '<tr><td colspan="10" class="loading">Aggiungi un punto per vedere le previsioni.</td></tr>';
+    document.getElementById('fcBody').innerHTML = '<tr><td colspan="13" class="loading">Aggiungi un punto per vedere le previsioni.</td></tr>';
     document.getElementById('spotInfo').classList.remove('visible');
   }
   renderChips();
@@ -582,12 +738,14 @@ function selectSpot(id){
 --------------------------------------------------------- */
 async function fetchAll(spot){
   document.getElementById('gauges').innerHTML = '<div class="loading" style="padding:22px;">Sto interrogando le boe digitali (Open-Meteo)…</div>';
-  document.getElementById('fcBody').innerHTML = '<tr><td colspan="10" class="loading">Recupero previsioni…</td></tr>';
+  document.getElementById('extraGauges').innerHTML = '<div class="loading" style="padding:22px;">Recupero dati aggiuntivi…</div>';
+  document.getElementById('fcBody').innerHTML = '<tr><td colspan="13" class="loading">Recupero previsioni…</td></tr>';
   document.getElementById('plancia-title').textContent = "Plancia — " + spot.name;
+  renderSunMoon(spot);
 
   try{
-    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${spot.lat}&longitude=${spot.lon}&hourly=temperature_2m,precipitation,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,pressure_msl,cloud_cover&daily=sunrise,sunset,weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=6`;
-    const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${spot.lat}&longitude=${spot.lon}&hourly=wave_height,wave_direction,wave_period,sea_surface_temperature&timezone=auto&forecast_days=6`;
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${spot.lat}&longitude=${spot.lon}&hourly=temperature_2m,precipitation,precipitation_probability,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,pressure_msl,cloud_cover,relative_humidity_2m,dew_point_2m,visibility,uv_index&daily=sunrise,sunset,weather_code,temperature_2m_max,temperature_2m_min,uv_index_max,precipitation_probability_max&timezone=auto&forecast_days=7`;
+    const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${spot.lat}&longitude=${spot.lon}&hourly=wave_height,wave_direction,wave_period,wind_wave_height,wind_wave_period,swell_wave_height,swell_wave_period,swell_wave_direction,ocean_current_velocity,ocean_current_direction,sea_surface_temperature&timezone=auto&forecast_days=7`;
 
     const wRes = await fetch(weatherUrl);
     if(!wRes.ok) throw new Error("Meteo: risposta " + wRes.status);
@@ -603,12 +761,17 @@ async function fetchAll(spot){
       }
     }catch(e){ marine = null; }
 
+    lastWeather = weather;
+    lastMarine = marine;
+
     renderDashboard(spot, weather, marine);
-    renderForecastTable(weather, marine);
+    renderExtra(spot, weather, marine);
+    renderForecastSection(spot, weather, marine);
     document.getElementById('updatedAt').textContent = "aggiornato " + new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
   }catch(err){
     document.getElementById('gauges').innerHTML = '<div class="loading" style="padding:22px;">Dati non disponibili al momento: ' + (err.message || err) + '</div>';
-    document.getElementById('fcBody').innerHTML = '<tr><td colspan="10" class="loading">Dati non disponibili al momento: ' + (err.message || err) + '</td></tr>';
+    document.getElementById('extraGauges').innerHTML = '<div class="loading" style="padding:22px;">Dati non disponibili al momento.</div>';
+    document.getElementById('fcBody').innerHTML = '<tr><td colspan="13" class="loading">Dati non disponibili al momento: ' + (err.message || err) + '</td></tr>';
   }
 }
 
@@ -705,47 +868,287 @@ function renderDashboard(spot, weather, marine){
   `;
 }
 
-function renderForecastTable(weather, marine){
+/* Pannello dati aggiuntivi: umidità, rugiada, UV, visibilità, onda di vento/mare lungo, corrente */
+function renderExtra(spot, weather, marine){
+  const h = weather.hourly;
+  const now = new Date();
+  let idx = 0, minDiff = Infinity;
+  h.time.forEach((t,i)=>{
+    const diff = Math.abs(new Date(t) - now);
+    if(diff < minDiff){ minDiff = diff; idx = i; }
+  });
+
+  const humidity = h.relative_humidity_2m ? h.relative_humidity_2m[idx] : null;
+  const dew = h.dew_point_2m ? h.dew_point_2m[idx] : null;
+  const uv = h.uv_index ? h.uv_index[idx] : null;
+  const vis = h.visibility ? h.visibility[idx] : null;
+  const precipProb = h.precipitation_probability ? h.precipitation_probability[idx] : null;
+
+  let windWave=null, swellWave=null, swellPeriod=null, swellDir=null, current=null, currentDir=null;
+  if(marine && marine.hourly){
+    const mh = marine.hourly;
+    let midx = mh.time ? mh.time.findIndex(t => t === h.time[idx]) : -1;
+    if(midx < 0 && mh.time){
+      let minD2 = Infinity;
+      mh.time.forEach((t,i)=>{ const d = Math.abs(new Date(t)-now); if(d<minD2){minD2=d; midx=i;} });
+    }
+    if(midx >= 0){
+      windWave = mh.wind_wave_height ? mh.wind_wave_height[midx] : null;
+      swellWave = mh.swell_wave_height ? mh.swell_wave_height[midx] : null;
+      swellPeriod = mh.swell_wave_period ? mh.swell_wave_period[midx] : null;
+      swellDir = mh.swell_wave_direction ? mh.swell_wave_direction[midx] : null;
+      current = mh.ocean_current_velocity ? mh.ocean_current_velocity[midx] : null;
+      currentDir = mh.ocean_current_direction ? mh.ocean_current_direction[midx] : null;
+    }
+  }
+
+  function uvLabel(v){
+    if(v===null) return "n.d.";
+    if(v<3) return "basso";
+    if(v<6) return "moderato";
+    if(v<8) return "alto";
+    if(v<11) return "molto alto";
+    return "estremo";
+  }
+
+  document.getElementById('extraGauges').innerHTML = `
+    <div class="gauge">
+      <div class="gauge-label">Umidità / rugiada</div>
+      <div class="gauge-value">${humidity !== null ? Math.round(humidity)+'%' : '—'}</div>
+      <div class="gauge-sub">${dew !== null ? 'punto di rugiada '+Math.round(dew)+'°C' : ''}</div>
+    </div>
+    <div class="gauge">
+      <div class="gauge-label">Indice UV</div>
+      <div class="gauge-value">${uv !== null ? uv.toFixed(1) : '—'}</div>
+      <div class="gauge-sub">${uvLabel(uv)} · picco giornaliero in tabella sotto</div>
+    </div>
+    <div class="gauge">
+      <div class="gauge-label">Visibilità</div>
+      <div class="gauge-value">${vis !== null ? (vis/1000).toFixed(1)+' km' : '—'}</div>
+      <div class="gauge-sub">${precipProb !== null ? 'probabilità pioggia '+Math.round(precipProb)+'%' : ''}</div>
+    </div>
+    <div class="gauge">
+      <div class="gauge-label">Onda di vento / mare lungo</div>
+      <div class="gauge-value">${windWave !== null ? windWave.toFixed(1)+' m' : '—'}</div>
+      <div class="gauge-sub">${swellWave !== null ? 'swell '+swellWave.toFixed(1)+'m'+(swellPeriod!==null?', '+swellPeriod.toFixed(1)+'s':'')+(swellDir!==null?' da '+degToCompass(swellDir):'') : 'swell: n.d.'}</div>
+    </div>
+    <div class="gauge">
+      <div class="gauge-label">Corrente superficiale</div>
+      <div class="gauge-value">${current !== null ? current.toFixed(1)+' km/h' : '—'}</div>
+      <div class="gauge-sub">${currentDir !== null ? 'direzione '+degToCompass(currentDir) : 'non disponibile qui'}</div>
+    </div>
+  `;
+}
+
+/* Sole, luna e finestre solunari — calcolati localmente con SunCalc, nessuna chiamata di rete */
+function renderSunMoon(spot){
+  if(typeof SunCalc === 'undefined'){
+    document.getElementById('sunMoonGauges').innerHTML = '<div class="plancia-empty">Libreria astronomica non disponibile al momento.</div>';
+    return;
+  }
+  const now = new Date();
+  const sunTimes = SunCalc.getTimes(now, spot.lat, spot.lon);
+  const moonTimes = SunCalc.getMoonTimes(now, spot.lat, spot.lon, true);
+  const moonIllum = SunCalc.getMoonIllumination(now);
+
+  // scansione ogni 10 minuti nelle 24h per trovare i transiti lunari (massima e minima altitudine = major periods)
+  let maxAlt = -100, minAlt = 100, tMax = null, tMin = null;
+  for(let m = 0; m < 24*60; m += 10){
+    const t = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, m);
+    const pos = SunCalc.getMoonPosition(t, spot.lat, spot.lon);
+    const altDeg = pos.altitude * 180 / Math.PI;
+    if(altDeg > maxAlt){ maxAlt = altDeg; tMax = t; }
+    if(altDeg < minAlt){ minAlt = altDeg; tMin = t; }
+  }
+
+  const fmt = t => t ? fmtTime(t) : "—";
+  const moonPhaseName = moonLabel(moonIllum.phase);
+
+  const minorWindows = [moonTimes.rise, moonTimes.set].filter(Boolean).map(fmtTime);
+  const majorWindows = [tMax, tMin].filter(Boolean).map(fmtTime);
+
+  document.getElementById('sunMoonGauges').innerHTML = `
+    <div class="gauge">
+      <div class="gauge-label">Alba / Tramonto</div>
+      <div class="gauge-value" style="font-size:1.3rem;">${fmt(sunTimes.sunrise)} – ${fmt(sunTimes.sunset)}</div>
+      <div class="gauge-sub">ora blu ${fmt(sunTimes.dawn)} – ${fmt(sunTimes.duskEnd || sunTimes.dusk)}</div>
+    </div>
+    <div class="gauge">
+      <div class="gauge-label">Levata / Tramonto luna</div>
+      <div class="gauge-value" style="font-size:1.3rem;">${moonTimes.rise ? fmtTime(moonTimes.rise) : '—'} – ${moonTimes.set ? fmtTime(moonTimes.set) : '—'}</div>
+      <div class="gauge-sub">${moonTimes.alwaysUp ? "la luna resta sopra l'orizzonte tutto il giorno" : (moonTimes.alwaysDown ? "la luna resta sotto l'orizzonte tutto il giorno" : '')}</div>
+    </div>
+    <div class="gauge">
+      <div class="gauge-label">Fase lunare</div>
+      <div class="gauge-value">${moonPhaseName}</div>
+      <div class="gauge-sub">illuminazione ${Math.round(moonIllum.fraction*100)}%</div>
+    </div>
+    <div class="gauge" style="grid-column: span 2;">
+      <div class="gauge-label">Finestre solunari (teoria Knight, indicativa)</div>
+      <div class="gauge-value" style="font-size:1.05rem;">Major: ${majorWindows.join(' · ') || '—'}</div>
+      <div class="gauge-sub">Minor: ${minorWindows.join(' · ') || '—'} — attività di alimentazione spesso più intensa in queste fasce, soprattutto se coincidono con alba o tramonto.</div>
+    </div>
+  `;
+  document.getElementById('sunMoonUpdated').textContent = "calcolato per oggi, " + now.toLocaleDateString('it-IT');
+}
+
+function fcRowHeaderHtml(cols){
+  return cols.map(c=>`<th>${c}</th>`).join('');
+}
+function hourlyValueAt(hourly, key, time){
+  if(!hourly || !hourly[key]) return null;
+  const idx = hourly.time.indexOf(time);
+  return idx >= 0 ? hourly[key][idx] : null;
+}
+function marineValueNear(marine, key, time){
+  if(!marine || !marine.hourly || !marine.hourly[key]) return null;
+  const mh = marine.hourly;
+  let idx = mh.time.indexOf(time);
+  if(idx < 0){
+    let best=-1, bestDiff=Infinity;
+    mh.time.forEach((t,i)=>{ const d=Math.abs(new Date(t)-new Date(time)); if(d<bestDiff){bestDiff=d; best=i;} });
+    idx = best;
+  }
+  return idx>=0 ? mh[key][idx] : null;
+}
+
+function renderForecastSection(spot, weather, marine){
+  const dateVal = document.getElementById('filterDate').value;
+  const fromVal = document.getElementById('filterFrom').value;
+  const toVal = document.getElementById('filterTo').value;
+  const container = document.getElementById('forecastContainer');
+  const h = weather.hourly, d = weather.daily;
+
+  // rimuove eventuale riepilogo finestra precedente
+  const oldSummary = document.getElementById('windowSummary');
+  if(oldSummary) oldSummary.remove();
+
+  if(!dateVal){
+    renderOutlook7(spot, weather, marine);
+    return;
+  }
+
+  // filtra le ore del giorno selezionato
+  const dayIndices = h.time.map((t,i)=>i).filter(i => h.time[i].startsWith(dateVal));
+  if(dayIndices.length === 0){
+    document.getElementById('fcHead').innerHTML = '';
+    document.getElementById('fcBody').innerHTML = '<tr><td class="loading">Nessun dato per questa data: le previsioni coprono solo i prossimi 7 giorni.</td></tr>';
+    return;
+  }
+
+  let indices = dayIndices;
+  let summaryHtml = "";
+  if(fromVal && toVal){
+    indices = dayIndices.filter(i=>{
+      const hh = h.time[i].slice(11,16);
+      return hh >= fromVal && hh <= toVal;
+    });
+    if(indices.length === 0) indices = dayIndices;
+
+    // medie della finestra
+    const avg = arr => { const vals = indices.map(i=>arr[i]).filter(v=>v!=null); return vals.length? vals.reduce((a,b)=>a+b,0)/vals.length : null; };
+    const avgWind = avg(h.wind_speed_10m);
+    const avgGust = avg(h.wind_gusts_10m);
+    const avgTemp = avg(h.temperature_2m);
+    const avgPrecipProb = avg(h.precipitation_probability);
+    let avgWave = null, avgCurrent = null;
+    if(marine && marine.hourly){
+      const waveArr = indices.map(i=>marineValueNear(marine,'wave_height', h.time[i])).filter(v=>v!=null);
+      avgWave = waveArr.length ? waveArr.reduce((a,b)=>a+b,0)/waveArr.length : null;
+      const curArr = indices.map(i=>marineValueNear(marine,'ocean_current_velocity', h.time[i])).filter(v=>v!=null);
+      avgCurrent = curArr.length ? curArr.reduce((a,b)=>a+b,0)/curArr.length : null;
+    }
+    summaryHtml = `
+      <div class="window-summary" id="windowSummary">
+        <div class="cell"><div class="l">Vento medio</div><div class="v">${avgWind!==null?Math.round(avgWind)+' km/h':'—'}</div></div>
+        <div class="cell"><div class="l">Raffiche medie</div><div class="v">${avgGust!==null?Math.round(avgGust)+' km/h':'—'}</div></div>
+        <div class="cell"><div class="l">Temp. media</div><div class="v">${avgTemp!==null?Math.round(avgTemp)+'°C':'—'}</div></div>
+        <div class="cell"><div class="l">Prob. pioggia</div><div class="v">${avgPrecipProb!==null?Math.round(avgPrecipProb)+'%':'—'}</div></div>
+        <div class="cell"><div class="l">Onda media</div><div class="v">${avgWave!==null?avgWave.toFixed(1)+' m':'—'}</div></div>
+        <div class="cell"><div class="l">Corrente media</div><div class="v">${avgCurrent!==null?avgCurrent.toFixed(1)+' km/h':'—'}</div></div>
+      </div>
+    `;
+    container.insertAdjacentHTML('afterbegin', summaryHtml);
+  }
+
+  document.getElementById('fcHead').innerHTML = fcRowHeaderHtml(["Ora","Meteo","Temp","Vento","Raffiche","Onda","Corrente","Pressione","UV","Pioggia"]);
+  document.getElementById('fcBody').innerHTML = indices.map(i=>{
+    const t = h.time[i];
+    const wave = marineValueNear(marine,'wave_height', t);
+    const current = marineValueNear(marine,'ocean_current_velocity', t);
+    return `<tr>
+      <td class="mono">${t.slice(11,16)}</td>
+      <td>${WMO[h.weather_code[i]] || '—'}</td>
+      <td class="mono">${Math.round(h.temperature_2m[i])}°</td>
+      <td class="mono">${Math.round(h.wind_speed_10m[i])} km/h ${degToCompass(h.wind_direction_10m[i])}</td>
+      <td class="mono">${Math.round(h.wind_gusts_10m[i])} km/h</td>
+      <td class="mono">${wave!==null?wave.toFixed(1)+' m':'—'}</td>
+      <td class="mono">${current!==null?current.toFixed(1)+' km/h':'—'}</td>
+      <td class="mono">${Math.round(h.pressure_msl[i])} hPa</td>
+      <td class="mono">${h.uv_index ? h.uv_index[i].toFixed(1) : '—'}</td>
+      <td class="mono">${h.precipitation_probability ? Math.round(h.precipitation_probability[i])+'%' : '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderOutlook7(spot, weather, marine){
   const d = weather.daily;
   const h = weather.hourly;
-  const mh = marine && marine.hourly ? marine.hourly : null;
+  document.getElementById('fcHead').innerHTML = fcRowHeaderHtml(["Giorno","Meteo","Temp","UV max","Finestra mattina (vento/onda)","Finestra sera (vento/onda)"]);
+
+  const avgInWindow = (arr, fromT, toT) => {
+    const vals = [];
+    h.time.forEach((t,i)=>{ const dt=new Date(t); if(dt>=fromT && dt<=toT && arr[i]!=null) vals.push(arr[i]); });
+    return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+  };
+  const avgWaveInWindow = (fromT, toT) => {
+    if(!marine || !marine.hourly || !marine.hourly.wave_height) return null;
+    const mh = marine.hourly;
+    const vals = [];
+    mh.time.forEach((t,i)=>{ const dt=new Date(t); if(dt>=fromT && dt<=toT && mh.wave_height[i]!=null) vals.push(mh.wave_height[i]); });
+    return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+  };
+
   let rows = "";
   for(let i=0;i<d.time.length;i++){
     const dayStr = d.time[i];
+    const dayDate = new Date(dayStr+"T12:00:00");
+    const sunTimes = SunCalc.getTimes(dayDate, spot.lat, spot.lon);
+    const amFrom = new Date(sunTimes.sunrise.getTime() - 60*60*1000);
+    const amTo = new Date(sunTimes.sunrise.getTime() + 3*60*60*1000);
+    const pmFrom = new Date(sunTimes.sunset.getTime() - 60*60*1000);
+    const pmTo = new Date(sunTimes.sunset.getTime() + 3*60*60*1000);
+
+    const amWind = avgInWindow(h.wind_speed_10m, amFrom, amTo);
+    const pmWind = avgInWindow(h.wind_speed_10m, pmFrom, pmTo);
+    const amWave = avgWaveInWindow(amFrom, amTo);
+    const pmWave = avgWaveInWindow(pmFrom, pmTo);
+
     let hIdx = h.time.findIndex(t => t.startsWith(dayStr) && t.endsWith("13:00"));
     if(hIdx < 0) hIdx = h.time.findIndex(t => t.startsWith(dayStr));
     const code = h.weather_code ? h.weather_code[hIdx] : d.weather_code[i];
-    const wind = h.wind_speed_10m[hIdx];
-    const gust = h.wind_gusts_10m[hIdx];
-    const windDir = h.wind_direction_10m[hIdx];
-    const pressure = Math.round(h.pressure_msl[hIdx]);
-
-    let wave = "—", period = "—", seaTemp = "—";
-    if(mh){
-      let mIdx = mh.time.findIndex(t => t === h.time[hIdx]);
-      if(mIdx < 0) mIdx = mh.time.findIndex(t => t.startsWith(dayStr));
-      if(mIdx >= 0){
-        wave = mh.wave_height ? mh.wave_height[mIdx].toFixed(1)+" m" : "—";
-        period = mh.wave_period ? mh.wave_period[mIdx].toFixed(1)+" s" : "—";
-        seaTemp = mh.sea_surface_temperature ? mh.sea_surface_temperature[mIdx].toFixed(1)+"°C" : "—";
-      }
-    }
 
     rows += `<tr>
       <td>${fmtDay(dayStr)}</td>
-      <td>${WMO[code] || "—"}</td>
+      <td>${WMO[code] || '—'}</td>
       <td class="mono">${Math.round(d.temperature_2m_min[i])}° / ${Math.round(d.temperature_2m_max[i])}°</td>
-      <td class="mono">${Math.round(wind)} km/h ${degToCompass(windDir)}</td>
-      <td class="mono">${Math.round(gust)} km/h</td>
-      <td class="mono">${wave}</td>
-      <td class="mono">${period}</td>
-      <td class="mono">${seaTemp}</td>
-      <td class="mono">${pressure} hPa</td>
-      <td class="mono">${fmtTime(d.sunrise[i])} / ${fmtTime(d.sunset[i])}</td>
+      <td class="mono">${d.uv_index_max ? d.uv_index_max[i].toFixed(1) : '—'}</td>
+      <td class="mono">${amWind!==null?Math.round(amWind)+' km/h':'—'}${amWave!==null?' · onda '+amWave.toFixed(1)+'m':''}</td>
+      <td class="mono">${pmWind!==null?Math.round(pmWind)+' km/h':'—'}${pmWave!==null?' · onda '+pmWave.toFixed(1)+'m':''}</td>
     </tr>`;
   }
   document.getElementById('fcBody').innerHTML = rows;
 }
+
+document.getElementById('filterDate').addEventListener('change', ()=>{ if(currentSpot && lastWeather) renderForecastSection(currentSpot, lastWeather, lastMarine); });
+document.getElementById('filterFrom').addEventListener('change', ()=>{ if(currentSpot && lastWeather) renderForecastSection(currentSpot, lastWeather, lastMarine); });
+document.getElementById('filterTo').addEventListener('change', ()=>{ if(currentSpot && lastWeather) renderForecastSection(currentSpot, lastWeather, lastMarine); });
+document.getElementById('clearFilterBtn').addEventListener('click', ()=>{
+  document.getElementById('filterDate').value = '';
+  document.getElementById('filterFrom').value = '';
+  document.getElementById('filterTo').value = '';
+  if(currentSpot && lastWeather) renderForecastSection(currentSpot, lastWeather, lastMarine);
+});
 
 /* ---------------------------------------------------------
    MAPPA (Leaflet + OpenStreetMap, gratuita)
@@ -753,10 +1156,41 @@ function renderForecastTable(weather, marine){
 let map, markers = {};
 function initMap(){
   map = L.map('map', {scrollWheelZoom:false}).setView([46, 10], 4);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  const base = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors',
-    maxZoom: 19
+    maxZoom: 19,
+    className: 'osm-base-tile'
   }).addTo(map);
+
+  // Batimetria EMODnet (alta risoluzione, acque europee) — WMS pubblico gratuito, nessuna chiave
+  const emodnetBathy = L.tileLayer.wms('https://ows.emodnet-bathymetry.eu/wms', {
+    layers: 'mean_rainbowcolour',
+    format: 'image/png',
+    transparent: true,
+    opacity: 0.6,
+    attribution: 'EMODnet Bathymetry'
+  });
+
+  // Batimetria GEBCO (copertura globale) — WMS pubblico gratuito, nessuna chiave
+  const gebcoBathy = L.tileLayer.wms('https://wms.gebco.net/mapserv', {
+    layers: 'GEBCO_LATEST',
+    format: 'image/png',
+    transparent: true,
+    opacity: 0.55,
+    attribution: 'GEBCO'
+  });
+
+  // Segnaletica nautica: boe, fari, ormeggi — OpenSeaMap, tile gratuite senza chiave
+  const seamarks = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
+    attribution: 'OpenSeaMap contributors',
+    maxZoom: 18
+  });
+
+  L.control.layers(null, {
+    "Batimetria EMODnet (Europa, alta risoluzione)": emodnetBathy,
+    "Batimetria GEBCO (globale)": gebcoBathy,
+    "Boe e segnaletica nautica (OpenSeaMap)": seamarks
+  }, {collapsed:false}).addTo(map);
 
   map.on('click', e=>{
     if(!mapAddMode) return;
@@ -793,6 +1227,83 @@ function renderSpotInfo(spot){
     <ul>${(TYPE_TIPS[spot.type] || TYPE_TIPS.altro).map(t=>`<li>${t}</li>`).join('')}</ul>
   `;
 }
+
+/* ---------------------------------------------------------
+   PUNTEGGI MATTINA/SERA PER LA DASHBOARD DEI PUNTI SALVATI
+--------------------------------------------------------- */
+function scorePill(score){
+  if(score === null) return '<span class="score-pill low">n.d.</span>';
+  let cls = 'low', label = 'Difficile';
+  if(score >= 70){ cls='good'; label='Buono'; }
+  else if(score >= 45){ cls='mid'; label='Discreto'; }
+  return `<span class="score-pill ${cls}">${label} · ${score}</span>`;
+}
+function windowScoreFromAverages(avgWind, avgWave, moonPhaseVal){
+  if(avgWind === null) return null;
+  let score = 100 - Math.min(45, avgWind*2.2);
+  if(avgWave !== null) score -= Math.min(25, avgWave*22);
+  if(moonPhaseVal !== null && (moonPhaseVal < 0.06 || moonPhaseVal > 0.94 || (moonPhaseVal > 0.46 && moonPhaseVal < 0.54))) score += 10;
+  return Math.max(5, Math.min(100, Math.round(score)));
+}
+function averageWindow(hourlyTimes, values, fromDate, toDate){
+  if(!values) return null;
+  let sum=0, n=0;
+  hourlyTimes.forEach((t,i)=>{
+    const d = new Date(t);
+    if(d >= fromDate && d <= toDate && values[i] != null){ sum += values[i]; n++; }
+  });
+  return n>0 ? sum/n : null;
+}
+async function computeAllScores(){
+  const btn = document.getElementById('refreshScoresBtn');
+  btn.disabled = true;
+  btn.textContent = "Calcolo…";
+  for(const spot of SPOTS){
+    try{
+      const now = new Date();
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${spot.lat}&longitude=${spot.lon}&hourly=wind_speed_10m&forecast_days=1&timezone=auto`;
+      const murl = `https://marine-api.open-meteo.com/v1/marine?latitude=${spot.lat}&longitude=${spot.lon}&hourly=wave_height&forecast_days=1&timezone=auto`;
+      const wRes = await fetch(url);
+      const w = await wRes.json();
+      let waveVals = null, waveTimes = null;
+      try{
+        const mRes = await fetch(murl);
+        const m = await mRes.json();
+        if(m && m.hourly){ waveVals = m.hourly.wave_height; waveTimes = m.hourly.time; }
+      }catch(e){}
+
+      const sunTimes = SunCalc.getTimes(now, spot.lat, spot.lon);
+      const moonPhaseVal = moonPhase(now);
+
+      const amFrom = new Date(sunTimes.sunrise.getTime() - 60*60*1000);
+      const amTo = new Date(sunTimes.sunrise.getTime() + 3*60*60*1000);
+      const pmFrom = new Date(sunTimes.sunset.getTime() - 60*60*1000);
+      const pmTo = new Date(sunTimes.sunset.getTime() + 3*60*60*1000);
+
+      const amWind = averageWindow(w.hourly.time, w.hourly.wind_speed_10m, amFrom, amTo);
+      const pmWind = averageWindow(w.hourly.time, w.hourly.wind_speed_10m, pmFrom, pmTo);
+      const amWave = waveTimes ? averageWindow(waveTimes, waveVals, amFrom, amTo) : null;
+      const pmWave = waveTimes ? averageWindow(waveTimes, waveVals, pmFrom, pmTo) : null;
+
+      const amScore = windowScoreFromAverages(amWind, amWave, moonPhaseVal);
+      const pmScore = windowScoreFromAverages(pmWind, pmWave, moonPhaseVal);
+
+      const amCell = document.getElementById('score-am-'+spot.id);
+      const pmCell = document.getElementById('score-pm-'+spot.id);
+      if(amCell) amCell.innerHTML = scorePill(amScore);
+      if(pmCell) pmCell.innerHTML = scorePill(pmScore);
+    }catch(e){
+      const amCell = document.getElementById('score-am-'+spot.id);
+      const pmCell = document.getElementById('score-pm-'+spot.id);
+      if(amCell) amCell.innerHTML = '<span class="score-pill low">errore</span>';
+      if(pmCell) pmCell.innerHTML = '<span class="score-pill low">errore</span>';
+    }
+    await new Promise(r=>setTimeout(r, 150)); // piccola pausa tra le chiamate, per rispetto del servizio gratuito
+  }
+  btn.disabled = false;
+  btn.textContent = "Ricalcola punteggi";
+}
+document.getElementById('refreshScoresBtn').addEventListener('click', computeAllScores);
 
 /* ---------------------------------------------------------
    TECNICHE DI PESCA (generiche, non legate a un luogo fisso)
@@ -862,7 +1373,9 @@ function renderCalendar(){
 --------------------------------------------------------- */
 renderTechniques();
 renderCalendar();
+loadSpotsFromStorage();
 initMap();
+SPOTS.forEach(s => addMarker(s));
 renderChips();
 </script>
 </body>
