@@ -1,340 +1,400 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StrikeCast - Fishing Weather & Solunar Radar</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    body { background-color: #0b132b; color: #f0f4f8; }
-    .card { background-color: #1c2541; border: 1px solid #3a506b; }
-    .accent { color: #48cae4; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LENZA — Bollettino del pescatore</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root{
+    --navy-deep:#061826;
+    --navy-mid:#0d2c3e;
+    --teal:#1c5d6b;
+    --sand:#e9dfc7;
+    --foam:#f5f1e6;
+    --rust:#d9622b;
+    --seaweed:#5a7d54;
+    --line:rgba(245,241,230,0.14);
+    --line-strong:rgba(245,241,230,0.28);
+    font-size:16px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--navy-deep);
+    color:var(--foam);
+    font-family:'Inter',sans-serif;
+    line-height:1.5;
+    background-image:
+      radial-gradient(ellipse at 20% -10%, rgba(28,93,107,0.35), transparent 60%),
+      radial-gradient(ellipse at 90% 10%, rgba(217,98,43,0.10), transparent 55%);
+  }
+  a{color:inherit;}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 24px;}
+  h1,h2,h3,.display{font-family:'Fraunces',serif;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    text-transform:uppercase;
+    letter-spacing:0.14em;
+    font-size:0.72rem;
+    color:var(--rust);
+    display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{content:""; width:20px; height:1px; background:var(--rust);}
+
+  /* ---------- HEADER ---------- */
+  header{
+    position:sticky; top:0; z-index:50;
+    background:rgba(6,24,38,0.86);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .navbar{display:flex; align-items:center; justify-content:space-between; padding:16px 24px;}
+  .logo{font-family:'Fraunces',serif; font-weight:700; font-size:1.3rem; letter-spacing:0.02em;}
+  .logo span{color:var(--rust);}
+  nav ul{display:flex; gap:28px; list-style:none;}
+  nav a{font-size:0.85rem; text-decoration:none; color:var(--foam); opacity:0.75; transition:opacity .2s;}
+  nav a:hover{opacity:1;}
+  @media(max-width:760px){ nav ul{gap:14px;} nav a{font-size:0.72rem;} }
+
+  /* ---------- HERO ---------- */
+  .hero{padding:64px 0 40px;}
+  .hero h1{font-size:clamp(2.1rem,5vw,3.4rem); font-weight:600; max-width:780px; line-height:1.05;}
+  .hero h1 em{font-style:italic; color:var(--sand);}
+  .hero p.lead{max-width:620px; margin-top:18px; color:rgba(245,241,230,0.72); font-size:1.05rem;}
+
+  /* ---------- GESTIONE PUNTI ---------- */
+  .points-panel{
+    margin-top:36px; border:1px solid var(--line-strong); border-radius:4px;
+    background:rgba(13,44,62,0.35); padding:22px;
+  }
+  .points-panel h2{font-size:1.05rem; font-weight:600; margin-bottom:4px;}
+  .points-panel .hint{font-size:0.82rem; color:rgba(245,241,230,0.6); margin-bottom:16px;}
+  .search-row{display:flex; gap:10px; flex-wrap:wrap;}
+  input[type="text"], input[type="number"]{
+    background:var(--navy-mid); color:var(--foam); border:1px solid var(--line-strong);
+    padding:11px 14px; font-family:'Inter',sans-serif; font-size:0.88rem; border-radius:2px;
+  }
+  #searchInput{flex:1; min-width:220px;}
+  .btn{
+    background:var(--rust); color:var(--navy-deep); border:1px solid var(--rust);
+    padding:11px 18px; font-family:'IBM Plex Mono',monospace; font-size:0.76rem;
+    text-transform:uppercase; letter-spacing:.05em; cursor:pointer; border-radius:2px;
+    font-weight:600; transition:opacity .2s;
+  }
+  .btn:hover{opacity:0.85;}
+  .btn-outline{
+    background:transparent; border:1px solid var(--line-strong); color:var(--foam);
+    padding:11px 18px; font-family:'IBM Plex Mono',monospace; font-size:0.76rem;
+    text-transform:uppercase; letter-spacing:.05em; cursor:pointer; border-radius:2px;
+    transition:border-color .2s, color .2s;
+  }
+  .btn-outline:hover{border-color:var(--rust); color:var(--rust);}
+  .btn-outline.active{border-color:var(--rust); color:var(--rust); background:rgba(217,98,43,0.1);}
+  .search-results{margin-top:10px; display:flex; flex-direction:column; gap:6px;}
+  .search-result{
+    text-align:left; background:var(--navy-mid); border:1px solid var(--line);
+    padding:10px 14px; font-size:0.82rem; cursor:pointer; border-radius:2px;
+  }
+  .search-result:hover{border-color:var(--rust);}
+  .search-result .sub{color:rgba(245,241,230,0.5); font-size:0.72rem; margin-top:2px;}
+
+  .add-form{
+    margin-top:16px; padding-top:16px; border-top:1px dashed var(--line-strong);
+    display:none; gap:12px; flex-wrap:wrap; align-items:flex-end;
+  }
+  .add-form.visible{display:flex;}
+  .field{display:flex; flex-direction:column; gap:5px;}
+  .field label{font-family:'IBM Plex Mono',monospace; font-size:0.64rem; text-transform:uppercase; letter-spacing:.08em; color:rgba(245,241,230,0.55);}
+  select.field-select{
+    background:var(--navy-mid); color:var(--foam); border:1px solid var(--line-strong);
+    padding:10px 12px; font-family:'Inter',sans-serif; font-size:0.85rem; border-radius:2px;
+  }
+  .coord-input{width:110px;}
+
+  .spot-chips{margin-top:18px; display:flex; flex-wrap:wrap; gap:8px;}
+  .chip{
+    display:flex; align-items:center; gap:8px;
+    border:1px solid var(--line-strong); border-radius:20px; padding:7px 8px 7px 14px;
+    font-size:0.8rem; cursor:pointer; transition:border-color .2s, background .2s;
+  }
+  .chip:hover{border-color:var(--rust);}
+  .chip.selected{border-color:var(--rust); background:rgba(217,98,43,0.12);}
+  .chip .rm{
+    width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:rgba(245,241,230,0.08); font-size:0.8rem; line-height:1;
+  }
+  .chip .rm:hover{background:var(--rust); color:var(--navy-deep);}
+  .empty-note{font-size:0.85rem; color:rgba(245,241,230,0.45); margin-top:14px; font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- PLANCIA / DASHBOARD ---------- */
+  .plancia{
+    margin-top:28px;
+    border:1px solid var(--line-strong);
+    background:linear-gradient(180deg, rgba(13,44,62,0.55), rgba(6,24,38,0.55));
+    border-radius:4px;
+    overflow:hidden;
+  }
+  .plancia-head{
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:18px 22px; border-bottom:1px solid var(--line);
+    flex-wrap:wrap; gap:8px;
+  }
+  .plancia-head h2{font-size:1.1rem; font-weight:600;}
+  .plancia-head .updated{font-size:0.7rem; color:rgba(245,241,230,0.5); font-family:'IBM Plex Mono',monospace;}
+  .gauges{
+    display:grid; grid-template-columns:repeat(5,1fr);
+    border-top:1px solid var(--line);
+  }
+  @media(max-width:900px){ .gauges{grid-template-columns:repeat(2,1fr);} }
+  .gauge{
+    padding:22px 18px; border-right:1px solid var(--line); border-bottom:1px solid var(--line);
+    display:flex; flex-direction:column; gap:10px; min-height:150px; justify-content:space-between;
+  }
+  .gauge-label{font-family:'IBM Plex Mono',monospace; font-size:0.66rem; text-transform:uppercase; letter-spacing:.1em; color:rgba(245,241,230,0.55);}
+  .gauge-value{font-family:'IBM Plex Mono',monospace; font-size:1.9rem; font-weight:500; color:var(--foam);}
+  .gauge-sub{font-size:0.75rem; color:rgba(245,241,230,0.55);}
+  .compass{width:52px; height:52px; border:1px solid var(--line-strong); border-radius:50%; position:relative; align-self:flex-start;}
+  .compass .needle{
+    position:absolute; left:50%; top:50%; width:2px; height:20px; background:var(--rust);
+    transform-origin:bottom center; transform:translate(-50%,-100%) rotate(0deg);
+  }
+  .moon-icon{width:34px; height:34px; border-radius:50%; background:var(--sand); position:relative; overflow:hidden; align-self:flex-start;}
+  .moon-icon .shadow{position:absolute; top:0; height:100%; background:var(--navy-deep);}
+  .trend-arrow{font-size:1.4rem;}
+  .score-bar{height:8px; background:rgba(245,241,230,0.12); border-radius:4px; overflow:hidden; margin-top:4px;}
+  .score-bar .fill{height:100%; background:var(--rust);}
+  .plancia-empty{padding:44px 22px; text-align:center; color:rgba(245,241,230,0.5); font-size:0.9rem;}
+
+  /* ---------- SECTIONS ---------- */
+  section{padding:64px 0;}
+  section.alt{background:rgba(13,44,62,0.28); border-top:1px solid var(--line); border-bottom:1px solid var(--line);}
+  .section-head{margin-bottom:34px; max-width:640px;}
+  .section-head h2{font-size:clamp(1.5rem,3vw,2.1rem); font-weight:600; margin-top:10px;}
+  .section-head p{color:rgba(245,241,230,0.65); margin-top:10px; font-size:0.95rem;}
+
+  /* map */
+  #map{height:460px; width:100%; border:1px solid var(--line-strong); border-radius:4px; filter:saturate(0.9); cursor:crosshair;}
+  .map-note{margin-top:12px; font-size:0.8rem; color:rgba(245,241,230,0.55); font-family:'IBM Plex Mono',monospace;}
+
+  /* forecast table */
+  .fc-scroll{overflow-x:auto; border:1px solid var(--line-strong); border-radius:4px;}
+  table.fc{border-collapse:collapse; width:100%; min-width:760px;}
+  table.fc th, table.fc td{padding:12px 14px; text-align:left; font-size:0.82rem; border-bottom:1px solid var(--line); white-space:nowrap;}
+  table.fc th{font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.06em; font-size:0.66rem; color:var(--rust); background:rgba(6,24,38,0.5); position:sticky; top:0;}
+  table.fc tbody tr:hover{background:rgba(245,241,230,0.04);}
+  table.fc td.mono{font-family:'IBM Plex Mono',monospace;}
+
+  /* technique cards */
+  .tech-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line-strong); border:1px solid var(--line-strong);}
+  @media(max-width:900px){.tech-grid{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:600px){.tech-grid{grid-template-columns:1fr;}}
+  .tech-card{background:var(--navy-deep); padding:26px 22px; cursor:pointer;}
+  .tech-card .num{font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--rust);}
+  .tech-card h3{font-size:1.15rem; margin-top:10px; font-weight:600;}
+  .tech-card .tag{font-size:0.72rem; color:rgba(245,241,230,0.5); margin-top:4px; font-family:'IBM Plex Mono',monospace;}
+  .tech-card p{font-size:0.86rem; color:rgba(245,241,230,0.7); margin-top:12px; display:none;}
+  .tech-card.open p{display:block;}
+  .tech-card .spec{font-size:0.78rem; margin-top:10px; display:none; color:var(--sand);}
+  .tech-card.open .spec{display:block;}
+
+  /* calendar */
+  .cal-scroll{overflow-x:auto; border:1px solid var(--line-strong); border-radius:4px;}
+  table.cal{border-collapse:collapse; width:100%; min-width:840px;}
+  table.cal th, table.cal td{border:1px solid var(--line); padding:9px 8px; text-align:center; font-size:0.72rem;}
+  table.cal th{font-family:'IBM Plex Mono',monospace; background:rgba(6,24,38,0.5); text-transform:uppercase; font-size:0.62rem; letter-spacing:.05em;}
+  table.cal td:first-child, table.cal th:first-child{text-align:left; font-family:'Inter',sans-serif; font-weight:600; font-size:0.78rem; position:sticky; left:0; background:var(--navy-deep);}
+  .dot{width:9px; height:9px; border-radius:50%; background:var(--seaweed); display:inline-block;}
+  .dot.peak{background:var(--rust);}
+
+  /* spot info */
+  .spot-info{
+    margin-top:36px; border:1px solid var(--line-strong); border-radius:4px; padding:26px;
+    background:rgba(13,44,62,0.3); display:none;
+  }
+  .spot-info.visible{display:block;}
+  .spot-info h3{font-size:1.2rem; font-weight:600;}
+  .spot-info .badges{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;}
+  .badge{font-family:'IBM Plex Mono',monospace; font-size:0.66rem; text-transform:uppercase; letter-spacing:.05em; border:1px solid var(--line-strong); padding:4px 10px; border-radius:20px; color:var(--sand);}
+  .spot-info ul{margin-top:14px; padding-left:18px; font-size:0.88rem; color:rgba(245,241,230,0.78);}
+  .spot-info li{margin-bottom:6px;}
+
+  footer{padding:40px 0; border-top:1px solid var(--line); font-size:0.75rem; color:rgba(245,241,230,0.45);}
+  footer a{text-decoration:underline; opacity:0.8;}
+  .loading{font-family:'IBM Plex Mono',monospace; font-size:0.8rem; color:rgba(245,241,230,0.5);}
+
+  ::-webkit-scrollbar{height:8px; width:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--line-strong); border-radius:4px;}
+</style>
 </head>
-<body class="p-4 md:p-8 font-sans antialiased">
-  <div class="max-w-7xl mx-auto space-y-6">
+<body>
 
-    <!-- Header & Coordinate -->
-    <header class="card p-6 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4 shadow-xl">
-      <div>
-        <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-3">
-          <i class="fa-solid fa-fish-fins text-cyan-400"></i> StrikeCast Dashboard
-        </h1>
-        <p class="text-slate-400 text-sm mt-1">Previsioni balistiche per la pesca sportiva (Meteo, Onde, Marea e Solunare)</p>
-      </div>
-      <div class="flex items-center gap-3 w-full md:w-auto">
-        <input id="lat" type="number" step="0.01" value="41.89" placeholder="Lat" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm w-24 text-center focus:outline-none focus:border-cyan-400">
-        <input id="lon" type="number" step="0.01" value="12.49" placeholder="Lon" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm w-24 text-center focus:outline-none focus:border-cyan-400">
-        <button onclick="getUserLocation()" class="bg-slate-800 hover:bg-slate-700 text-cyan-400 px-3 py-2 rounded-lg text-sm border border-slate-700" title="Usa GPS"><i class="fa-solid fa-location-crosshairs"></i></button>
-        <button onclick="loadDashboard()" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-4 py-2 rounded-lg text-sm transition">Aggiorna</button>
-      </div>
-    </header>
-
-    <!-- Top KPIs & Strike Score -->
-    <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div class="card p-5 rounded-xl border-l-4 border-l-cyan-400 flex flex-col justify-between">
-        <div class="flex justify-between items-center">
-          <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Strike Index Attuale</span>
-          <i class="fa-solid fa-bolt text-yellow-400"></i>
-        </div>
-        <div class="my-2 flex items-baseline gap-2">
-          <span id="strikeScore" class="text-4xl font-extrabold text-white">--</span>
-          <span class="text-sm font-medium text-slate-400">/ 100</span>
-        </div>
-        <span id="strikeAdvice" class="text-xs text-slate-400 font-medium">In attesa dati...</span>
-      </div>
-
-      <div class="card p-5 rounded-xl border-l-4 border-l-blue-500 flex flex-col justify-between">
-        <div class="flex justify-between items-center">
-          <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Pressione & Trend</span>
-          <i class="fa-solid fa-gauge-high text-blue-400"></i>
-        </div>
-        <div class="my-2">
-          <span id="currentPressure" class="text-3xl font-bold text-white">--</span>
-          <span class="text-sm text-slate-400">hPa</span>
-        </div>
-        <span id="pressureTrend" class="text-xs text-slate-400">--</span>
-      </div>
-
-      <div class="card p-5 rounded-xl border-l-4 border-l-teal-400 flex flex-col justify-between">
-        <div class="flex justify-between items-center">
-          <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Moto Ondoso & Mare</span>
-          <i class="fa-solid fa-water text-teal-400"></i>
-        </div>
-        <div class="my-2">
-          <span id="waveHeight" class="text-3xl font-bold text-white">--</span>
-          <span class="text-sm text-slate-400">m</span>
-        </div>
-        <span id="wavePeriod" class="text-xs text-slate-400">Periodo: -- s</span>
-      </div>
-
-      <div class="card p-5 rounded-xl border-l-4 border-l-indigo-400 flex flex-col justify-between">
-        <div class="flex justify-between items-center">
-          <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Vento & Direzione</span>
-          <i class="fa-solid fa-wind text-indigo-400"></i>
-        </div>
-        <div class="my-2">
-          <span id="windSpeed" class="text-3xl font-bold text-white">--</span>
-          <span class="text-sm text-slate-400">km/h</span>
-        </div>
-        <span id="windDir" class="text-xs text-slate-400">Direzione: --</span>
-      </div>
-    </section>
-
-    <!-- Grafico 24 Ore -->
-    <section class="card p-6 rounded-2xl shadow-xl">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-lg font-bold text-white flex items-center gap-2">
-          <i class="fa-solid fa-chart-line text-cyan-400"></i> Finestra di Attività 24h & Dinamica Barometrica
-        </h2>
-        <span class="text-xs bg-slate-800 text-slate-300 px-3 py-1 rounded-full border border-slate-700">Previsioni orarie</span>
-      </div>
-      <div class="h-72 w-full">
-        <canvas id="forecastChart"></canvas>
-      </div>
-    </section>
-
-    <!-- Dati Solunari & Log Rapido -->
-    <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      
-      <!-- Finestre Solunari -->
-      <div class="card p-6 rounded-2xl">
-        <h3 class="text-md font-bold text-white mb-4 flex items-center gap-2">
-          <i class="fa-solid fa-moon text-yellow-300"></i> Fasi Solunari & Crepuscoli
-        </h3>
-        <div class="space-y-3 text-sm">
-          <div class="flex justify-between py-2 border-b border-slate-800">
-            <span class="text-slate-400">Alba / Tramonto</span>
-            <span id="sunTimes" class="font-semibold text-white">-- : --</span>
-          </div>
-          <div class="flex justify-between py-2 border-b border-slate-800">
-            <span class="text-slate-400">Major Period 1 (Picco Solunare)</span>
-            <span id="majorPeriod" class="font-semibold text-cyan-300">-- : --</span>
-          </div>
-          <div class="flex justify-between py-2 border-b border-slate-800">
-            <span class="text-slate-400">Minor Period 1 (Intermedio)</span>
-            <span id="minorPeriod" class="font-semibold text-cyan-300">-- : --</span>
-          </div>
-          <div class="flex justify-between py-2">
-            <span class="text-slate-400">Temp. Superficie Mare</span>
-            <span id="seaTemp" class="font-semibold text-teal-300">-- °C</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Log Cattura Rapida -->
-      <div class="card p-6 rounded-2xl flex flex-col justify-between">
-        <div>
-          <h3 class="text-md font-bold text-white mb-2 flex items-center gap-2">
-            <i class="fa-solid fa-book-bookmark text-cyan-400"></i> Quick Catch Log
-          </h3>
-          <p class="text-xs text-slate-400 mb-4">Salva all'istante la cattura registrando i parametri meteo attuali nel tuo browser.</p>
-          <div class="flex gap-2 mb-3">
-            <input id="fishSpecies" type="text" placeholder="Specie (es. Spigola, Orata)" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-cyan-400">
-            <button onclick="saveCatch()" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-4 py-2 rounded-lg text-sm transition shrink-0">Salva</button>
-          </div>
-        </div>
-        <div id="catchList" class="space-y-2 max-h-36 overflow-y-auto text-xs text-slate-300 pr-1"></div>
-      </div>
-
-    </section>
+<header>
+  <div class="navbar wrap">
+    <div class="logo">LENZA<span>.</span></div>
+    <nav>
+      <ul>
+        <li><a href="#punti">I miei punti</a></li>
+        <li><a href="#mappa">Mappa</a></li>
+        <li><a href="#meteo">Previsioni</a></li>
+        <li><a href="#tecniche">Tecniche</a></li>
+        <li><a href="#calendario">Calendario</a></li>
+      </ul>
+    </nav>
   </div>
+</header>
 
-  <script>
-    let forecastChart = null;
+<main>
+  <section class="hero wrap">
+    <div class="eyebrow">Bollettino del pescatore · ovunque tu peschi</div>
+    <h1>Vento, mare e luna, <em>per i tuoi</em> spot.</h1>
+    <p class="lead">Nessun elenco precompilato: cerchi un luogo, clicchi sulla mappa o usi la tua posizione, e costruisci la tua lista di poste personali. Da lì, dati meteomarini in tempo reale su vento, moto ondoso, pressione e fase lunare — con fonti pubbliche e completamente gratuite.</p>
 
-    function getUserLocation() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(pos => {
-          document.getElementById('lat').value = pos.coords.latitude.toFixed(2);
-          document.getElementById('lon').value = pos.coords.longitude.toFixed(2);
-          loadDashboard();
-        }, () => alert("Impossibile recuperare la posizione GPS. Inserisci le coordinate a mano."));
-      }
-    }
+    <div class="points-panel" id="punti">
+      <h2>I tuoi punti di pesca</h2>
+      <div class="hint">Cerca un luogo per nome, oppure attiva "Aggiungi dalla mappa" e clicca dove vuoi segnare una posta.</div>
 
-    // Algoritmo di calcolo Strike Index (0 - 100)
-    function calculateStrikeIndex(pressureDelta, windSpeed, hour) {
-      let score = 50;
+      <div class="search-row">
+        <input type="text" id="searchInput" placeholder="Cerca una località (es. Alghero, Genova, Formentera…)" class="mono">
+        <button class="btn" id="searchBtn">Cerca</button>
+        <button class="btn-outline" id="mapAddToggle">Aggiungi dalla mappa</button>
+        <button class="btn-outline" id="locateBtn">Usa la mia posizione</button>
+      </div>
 
-      // 1. Dinamica Barometrica: caduta di pressione stimola l'appetito predatorio
-      if (pressureDelta < -1.0) score += 25;       // Calo deciso: ottima finestra
-      else if (pressureDelta < -0.3) score += 15;  // Lieve calo
-      else if (Math.abs(pressureDelta) <= 0.3) score += 5; // Stabile
-      else score -= 15;                            // Aumento repentino: pessimo
+      <div class="search-results" id="searchResults"></div>
 
-      // 2. Vento ottimale (8 - 25 km/h increspa l'acqua senza renderla ingestibile)
-      if (windSpeed >= 8 && windSpeed <= 22) score += 15;
-      else if (windSpeed > 35) score -= 20;
-
-      // 3. Orari d'oro (Alba 5-8 e Tramonto 18-21)
-      if ((hour >= 5 && hour <= 8) || (hour >= 18 && hour <= 21)) score += 15;
-      else if (hour >= 11 && hour <= 15) score -= 10;
-
-      return Math.min(100, Math.max(10, Math.round(score)));
-    }
-
-    async function loadDashboard() {
-      const lat = document.getElementById('lat').value;
-      const lon = document.getElementById('lon').value;
-
-      try {
-        // Chiamata Meteo Generale
-        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=surface_pressure,wind_speed_10m,wind_direction_10m,temperature_2m&daily=sunrise,sunset&timezone=auto&forecast_days=2`;
-        // Chiamata Meteo Marino
-        const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&hourly=wave_height,wave_period,ocean_current_velocity,sea_surface_temperature&timezone=auto&forecast_days=2`;
-
-        const [weatherRes, marineRes] = await Promise.all([
-          fetch(weatherUrl).then(r => r.json()),
-          fetch(marineUrl).then(r => r.json()).catch(() => null)
-        ]);
-
-        const currentHourIndex = new Date().getHours();
-        const hourly = weatherRes.hourly;
-        
-        // Pressione e delta
-        const curPres = hourly.surface_pressure[currentHourIndex];
-        const prevPres = hourly.surface_pressure[Math.max(0, currentHourIndex - 3)];
-        const pressureDelta = (curPres - prevPres);
-
-        const curWind = hourly.wind_speed_10m[currentHourIndex];
-        const curWindDir = hourly.wind_direction_10m[currentHourIndex];
-
-        // Dati Marini (se disponibili per le coordinate)
-        let waveH = "--", waveP = "--", sTemp = "--";
-        if (marineRes && marineRes.hourly && marineRes.hourly.wave_height) {
-          waveH = marineRes.hourly.wave_height[currentHourIndex] || "0.2";
-          waveP = marineRes.hourly.wave_period[currentHourIndex] || "4.0";
-          sTemp = marineRes.hourly.sea_surface_temperature ? marineRes.hourly.sea_surface_temperature[currentHourIndex] || "--" : "--";
-        }
-
-        // Calcolo punteggio
-        const score = calculateStrikeIndex(pressureDelta, curWind, currentHourIndex);
-
-        // Aggiornamento DOM KPI
-        document.getElementById('strikeScore').innerText = score;
-        document.getElementById('currentPressure').innerText = Math.round(curPres);
-        document.getElementById('pressureTrend').innerText = `Variazione 3h: ${pressureDelta > 0 ? '+' : ''}${pressureDelta.toFixed(1)} hPa`;
-        document.getElementById('waveHeight').innerText = waveH;
-        document.getElementById('wavePeriod').innerText = `Periodo: ${waveP} s`;
-        document.getElementById('windSpeed').innerText = curWind;
-        document.getElementById('windDir').innerText = `Direzione: ${curWindDir}°`;
-        document.getElementById('seaTemp').innerText = `${sTemp} °C`;
-        
-        // Sunrise/Sunset & Solunar
-        const sunrise = weatherRes.daily.sunrise[0].split('T')[1];
-        const sunset = weatherRes.daily.sunset[0].split('T')[1];
-        document.getElementById('sunTimes').innerText = `${sunrise} / ${sunset}`;
-        document.getElementById('majorPeriod').innerText = "11:30 - 13:30 (Meridiano)";
-        document.getElementById('minorPeriod').innerText = "05:45 - 06:45 (Transito)";
-
-        // Giudizio testuale
-        const advice = document.getElementById('strikeAdvice');
-        if (score >= 75) { advice.innerText = "Condizioni Eccellenti! Esci subito."; advice.className = "text-xs text-green-400 font-bold"; }
-        else if (score >= 50) { advice.innerText = "Condizioni Medie. Cerca cambi di luce."; advice.className = "text-xs text-yellow-400 font-medium"; }
-        else { advice.innerText = "Attività prevista bassa."; advice.className = "text-xs text-red-400 font-medium"; }
-
-        // Generazione dati orari grafico 24h
-        const hoursLabels = [];
-        const scoreData = [];
-        const pressureData = [];
-
-        for (let i = 0; i < 24; i++) {
-          hoursLabels.push(`${i}:00`);
-          const pD = i > 0 ? hourly.surface_pressure[i] - hourly.surface_pressure[i-1] : 0;
-          scoreData.push(calculateStrikeIndex(pD, hourly.wind_speed_10m[i], i));
-          pressureData.push(hourly.surface_pressure[i]);
-        }
-
-        renderChart(hoursLabels, scoreData, pressureData);
-      } catch (err) {
-        console.error(err);
-        alert("Errore nel recupero dati meteo. Verifica le coordinate.");
-      }
-    }
-
-    function renderChart(labels, scores, pressures) {
-      const ctx = document.getElementById('forecastChart').getContext('2d');
-      if (forecastChart) forecastChart.destroy();
-
-      forecastChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Strike Score (%)',
-              data: scores,
-              borderColor: '#48cae4',
-              backgroundColor: 'rgba(72, 202, 228, 0.15)',
-              yAxisID: 'y',
-              fill: true,
-              tension: 0.3
-            },
-            {
-              label: 'Pressione (hPa)',
-              data: pressures,
-              borderColor: '#f59e0b',
-              borderDash: [5, 5],
-              yAxisID: 'y1',
-              tension: 0.3
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: { min: 0, max: 100, grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
-            y1: { position: 'right', grid: { display: false }, ticks: { color: '#f59e0b' } },
-            x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }
-          },
-          plugins: {
-            legend: { labels: { color: '#f0f4f8' } }
-          }
-        }
-      });
-    }
-
-    function saveCatch() {
-      const input = document.getElementById('fishSpecies');
-      if (!input.value.trim()) return;
-      const score = document.getElementById('strikeScore').innerText;
-      const pres = document.getElementById('currentPressure').innerText;
-      const log = {
-        name: input.value,
-        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-        score: score,
-        pressure: pres
-      };
-
-      const catches = JSON.parse(localStorage.getItem('strike_catches') || '[]');
-      catches.unshift(log);
-      localStorage.setItem('strike_catches', JSON.stringify(catches));
-      input.value = '';
-      renderCatches();
-    }
-
-    function renderCatches() {
-      const catches = JSON.parse(localStorage.getItem('strike_catches') || '[]');
-      const container = document.getElementById('catchList');
-      if (!catches.length) {
-        container.innerHTML = `<span class="text-slate-500 italic">Nessuna cattura salvata.</span>`;
-        return;
-      }
-      container.innerHTML = catches.slice(0, 5).map(c => `
-        <div class="bg-slate-900/80 p-2 rounded border border-slate-800 flex justify-between items-center">
-          <div><span class="font-bold text-cyan-300">${c.name}</span> <span class="text-slate-500">(${c.time})</span></div>
-          <div class="text-slate-400 text-xs">${c.pressure} hPa | Score: <b class="text-yellow-400">${c.score}</b></div>
+      <div class="add-form" id="addForm">
+        <div class="field">
+          <label>Nome del punto</label>
+          <input type="text" id="newName" placeholder="Es. Scogliera del faro">
         </div>
-      `).join('');
-    }
+        <div class="field">
+          <label>Tipo di posta</label>
+          <select class="field-select" id="newType">
+            <option value="spiaggia">Spiaggia sabbiosa</option>
+            <option value="scogliera">Scogliera / roccia</option>
+            <option value="porto">Porto o foce</option>
+            <option value="isola">Isola / canale con corrente</option>
+            <option value="lago">Acqua interna (lago/fiume)</option>
+            <option value="altro">Altro</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Latitudine</label>
+          <input type="number" step="0.0001" class="coord-input mono" id="newLat">
+        </div>
+        <div class="field">
+          <label>Longitudine</label>
+          <input type="number" step="0.0001" class="coord-input mono" id="newLon">
+        </div>
+        <button class="btn" id="confirmAdd">Salva punto</button>
+        <button class="btn-outline" id="cancelAdd">Annulla</button>
+      </div>
 
-    // Avvio automatico al caricamento
-    loadDashboard();
-    renderCatches();
-  </script>
-</body>
-</html>
+      <div class="spot-chips" id="spotChips"></div>
+      <div class="empty-note" id="emptyNote">Non hai ancora aggiunto nessun punto. I punti restano salvati finché tieni aperta questa pagina.</div>
+    </div>
+
+    <div class="plancia" id="plancia">
+      <div class="plancia-head">
+        <h2 id="plancia-title">Plancia</h2>
+        <div class="updated mono" id="updatedAt"></div>
+      </div>
+      <div class="gauges" id="gauges">
+        <div class="plancia-empty">Aggiungi o seleziona un punto per vedere vento, mare, pressione e luna in tempo reale.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="mappa" class="wrap alt">
+    <div class="section-head">
+      <div class="eyebrow">Carta nautica</div>
+      <h2>La tua mappa</h2>
+      <p>Vuota finché non la riempi tu. Attiva "Aggiungi dalla mappa" qui sopra e clicca ovunque per segnare un nuovo punto, oppure tocca un punto già presente per caricarne i dati.</p>
+    </div>
+    <div id="map"></div>
+    <div class="map-note">© OpenStreetMap contributors · geocoding e dati meteomarini © Open-Meteo.com — nessuna chiave API richiesta</div>
+  </section>
+
+  <section id="meteo" class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Previsione a 5 giorni</div>
+      <h2>Vento, mare e pressione</h2>
+      <p>La tabella si aggiorna in base al punto selezionato. Dove il servizio marino non copre la zona (es. acque interne), vedrai solo i dati meteo.</p>
+    </div>
+    <div class="fc-scroll">
+      <table class="fc" id="fcTable">
+        <thead>
+          <tr>
+            <th>Giorno</th><th>Meteo</th><th>Temp</th><th>Vento</th><th>Raffiche</th>
+            <th>Moto ondoso</th><th>Periodo onda</th><th>Temp. mare</th><th>Pressione</th><th>Alba / Tramonto</th>
+          </tr>
+        </thead>
+        <tbody id="fcBody">
+          <tr><td colspan="10" class="loading">Aggiungi un punto per vedere le previsioni.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="tecniche" class="alt">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">Manuale di bordo</div>
+        <h2>Tecniche da riva e da barca</h2>
+        <p>Tocca una scheda per aprirla: attrezzatura essenziale, tipo di costa più adatta e specie target di stagione. Utili ovunque, adatta i dettagli alla tua zona.</p>
+      </div>
+      <div class="tech-grid" id="techGrid"></div>
+    </div>
+  </section>
+
+  <section id="calendario" class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Stagionalità indicativa</div>
+      <h2>Calendario delle specie</h2>
+      <p>Riferito alle acque temperate del Mediterraneo: adatta i mesi in anticipo o ritardo di 2-4 settimane a seconda di quanto sei a nord o a sud. <span class="dot"></span> presente &nbsp; <span class="dot peak"></span> periodo di punta</p>
+    </div>
+    <div class="cal-scroll">
+      <table class="cal" id="calTable"></table>
+    </div>
+
+    <div class="spot-info" id="spotInfo"></div>
+  </section>
+</main>
+
+<footer class="wrap">
+  Progetto indipendente senza fini di lucro. Meteo, mare e geocoding: <a href="https://open-meteo.com" target="_blank">Open-Meteo.com</a> (API gratuita, licenza CC-BY 4.0). Mappa: <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>, tile via CARTO. I tuoi punti restano solo in questa sessione del browser: non vengono inviati né salvati da nessuna parte. Rispetta sempre le misure minime, i periodi di fermo biologico e i regolamenti locali prima di pescare.
+</footer>
+
+<script>
+/* ---------------------------------------------------------
+   STATO: i punti li crea solo l'utente, nessun preset
+--------------------------------------------------------- */
+let SPOTS = [];
+let currentSpot = null;
+let mapAddMode = false;
+let pendingCoords = null;
+
+/* ---------------------------------------------------------
+   UTILS
+--------------------------------------------------------- */
+const WMO = {
+  0:"Sereno",1:"Poco nuvoloso",2:"Parz. nuvoloso",3:"Coperto",
+  45:"Nebbia",48:"Nebbia gelata",
+  51:"Pioviggine leggera",53:"Pioviggine",55:"Pioviggine fitta",
+  61:"Pioggia leggera",63:"Pioggia",65:"Pioggia forte",
+  71:"Neve leggera",73:"Neve",75:"Neve forte",
+  80:"Rovesci leggeri",81:"Rovesci",82:"Rovesci forti",
+  95:"Temporale",96:"Temporale con grandine",99:"Temporale forte"
+};
+const TYPE_LABEL = {
+  spiaggia:"Spiaggia sabbiosa", scogliera:"Scogliera / roccia", porto:"Porto o foce",
+  isola:"Isola / canale", lago:"Acqua interna", altro:"Altro"
+};
+const TYPE_TIPS = {
+  spiaggia:["Surfcasting: cerca le buche oltre la battigia, spesso segnalate da un cambio di colore dell'acqua","Meglio con mare leggermente mosso, che rimescola il fondale e attira il pesce a caccia","Alba, tramonto e ore notturne sono generalmente più produttive"],
+  scogl
