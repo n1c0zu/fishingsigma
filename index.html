@@ -32,21 +32,42 @@
     background-image:
       radial-gradient(ellipse at 20% -10%, rgba(28,93,107,0.35), transparent 60%),
       radial-gradient(ellipse at 90% 10%, rgba(217,98,43,0.10), transparent 55%);
+    overflow-x:hidden;
   }
   a{color:inherit;}
 
-  /* ---------- APP LAYOUT (SIDEBAR + MAIN) ---------- */
+  /* SVG Icons utility */
+  .svg-icon{
+    display:inline-block;
+    width:14px;
+    height:14px;
+    stroke-width:2;
+    stroke:currentColor;
+    fill:none;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    vertical-align:middle;
+  }
+
+  /* ---------- APP LAYOUT (SIDEBAR FISSA + MAIN) ---------- */
   .app-shell{
     display:flex;
     min-height:100vh;
     position:relative;
+    width:100%;
   }
   .main-area{
     flex:1;
     min-width:0;
     display:flex;
     flex-direction:column;
+    margin-left:360px;
+    transition:margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
+  .app-shell.sidebar-collapsed .main-area{
+    margin-left:0;
+  }
+
   .wrap{max-width:1100px; margin:0 auto; padding:0 24px; width:100%;}
   h1,h2,h3,.display{font-family:'Fraunces',serif;}
   .mono{font-family:'IBM Plex Mono',monospace;}
@@ -60,27 +81,38 @@
   }
   .eyebrow::before{content:""; width:20px; height:1px; background:var(--rust);}
 
-  /* ---------- SIDEBAR SINISTRA ---------- */
+  /* ---------- SIDEBAR FISSA E COLLASSABILE ---------- */
   .sidebar{
     width:360px;
-    flex-shrink:0;
-    background:rgba(6,24,38,0.96);
+    background:rgba(6,24,38,0.98);
     border-right:1px solid var(--line-strong);
     padding:24px 20px;
     overflow-y:auto;
     height:100vh;
-    position:sticky;
+    position:fixed;
     top:0;
+    left:0;
+    bottom:0;
     z-index:90;
     display:flex;
     flex-direction:column;
-    gap:20px;
+    gap:18px;
+    transition:transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
   }
+
+  @media(min-width:1025px){
+    .sidebar.collapsed{
+      transform:translateX(-100%);
+      opacity:0;
+      pointer-events:none;
+    }
+  }
+
   .sidebar-header{
     display:flex;
     align-items:center;
     justify-content:space-between;
-    padding-bottom:14px;
+    padding-bottom:12px;
     border-bottom:1px solid var(--line);
   }
   .sidebar-title{
@@ -89,14 +121,25 @@
     font-weight:600;
   }
   .close-sidebar-btn{
-    display:none;
-    background:none;
-    border:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(245,241,230,0.06);
+    border:1px solid var(--line-strong);
+    border-radius:4px;
     color:var(--foam);
-    font-size:1.5rem;
+    width:28px;
+    height:28px;
     cursor:pointer;
     line-height:1;
+    transition:background 0.2s, border-color 0.2s, color 0.2s;
   }
+  .close-sidebar-btn:hover{
+    background:rgba(217,98,43,0.2);
+    border-color:var(--rust);
+    color:var(--rust);
+  }
+
   .sidebar-backdrop{
     display:none;
     position:fixed;
@@ -107,36 +150,44 @@
   }
 
   @media(max-width:1024px){
+    .main-area{
+      margin-left:0 !important;
+    }
     .sidebar{
-      position:fixed;
-      left:0; top:0; bottom:0;
       width:340px;
       max-width:86vw;
       transform:translateX(-100%);
-      transition:transform .3s ease;
       z-index:100;
       box-shadow:4px 0 24px rgba(0,0,0,0.6);
     }
     .sidebar.open{
       transform:translateX(0);
+      opacity:1;
+      pointer-events:auto;
     }
     .sidebar-backdrop.open{
       display:block;
     }
-    .close-sidebar-btn{
-      display:block;
-    }
   }
 
+  .sidebar-section{
+    border-bottom:1px solid var(--line);
+    padding-bottom:14px;
+  }
   .sidebar-section-title{
-    font-size:0.92rem;
+    font-size:0.86rem;
     font-weight:600;
-    margin-bottom:6px;
+    margin-bottom:4px;
+    color:var(--sand);
+    display:flex;
+    align-items:center;
+    gap:6px;
   }
   .sidebar .hint{
-    font-size:0.78rem;
+    font-size:0.75rem;
     color:rgba(245,241,230,0.6);
-    margin-bottom:12px;
+    margin-bottom:10px;
+    line-height:1.35;
   }
   .sidebar-actions{
     display:flex;
@@ -150,73 +201,73 @@
   }
   input[type="text"], input[type="number"], input[type="date"], input[type="time"], textarea{
     background:var(--navy-mid); color:var(--foam); border:1px solid var(--line-strong);
-    padding:10px 12px; font-family:'Inter',sans-serif; font-size:0.85rem; border-radius:2px;
+    padding:9px 12px; font-family:'Inter',sans-serif; font-size:0.82rem; border-radius:2px;
     width:100%;
   }
-  textarea{min-height:64px; resize:vertical;}
+  textarea{min-height:60px; resize:vertical;}
   .btn{
     background:var(--rust); color:var(--navy-deep); border:1px solid var(--rust);
-    padding:10px 16px; font-family:'IBM Plex Mono',monospace; font-size:0.76rem;
+    padding:9px 14px; font-family:'IBM Plex Mono',monospace; font-size:0.74rem;
     text-transform:uppercase; letter-spacing:.05em; cursor:pointer; border-radius:2px;
     font-weight:600; transition:opacity .2s; text-align:center;
   }
   .btn:hover{opacity:0.85;}
   .btn-outline{
     background:transparent; border:1px solid var(--line-strong); color:var(--foam);
-    padding:10px 16px; font-family:'IBM Plex Mono',monospace; font-size:0.76rem;
+    padding:9px 14px; font-family:'IBM Plex Mono',monospace; font-size:0.74rem;
     text-transform:uppercase; letter-spacing:.05em; cursor:pointer; border-radius:2px;
     transition:border-color .2s, color .2s, background .2s; text-align:center;
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
   }
   .btn-outline:hover{border-color:var(--rust); color:var(--rust);}
   .btn-outline.active{border-color:var(--rust); color:var(--rust); background:rgba(217,98,43,0.18);}
 
-  .search-results{margin-top:4px; display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto;}
+  .search-results{margin-top:4px; display:flex; flex-direction:column; gap:6px; max-height:180px; overflow-y:auto;}
   .search-result{
     text-align:left; background:var(--navy-mid); border:1px solid var(--line);
-    padding:8px 12px; font-size:0.8rem; cursor:pointer; border-radius:2px;
+    padding:8px 10px; font-size:0.78rem; cursor:pointer; border-radius:2px;
   }
   .search-result:hover{border-color:var(--rust);}
-  .search-result .sub{color:rgba(245,241,230,0.5); font-size:0.7rem; margin-top:2px;}
+  .search-result .sub{color:rgba(245,241,230,0.5); font-size:0.68rem; margin-top:2px;}
 
   .add-form{
-    margin-top:12px; padding:14px; border:1px dashed var(--line-strong);
+    margin-top:10px; padding:12px; border:1px dashed var(--line-strong);
     background:rgba(13,44,62,0.4); border-radius:4px;
-    display:none; flex-direction:column; gap:10px;
+    display:none; flex-direction:column; gap:8px;
   }
   .add-form.visible{display:flex;}
-  .field{display:flex; flex-direction:column; gap:4px;}
-  .field label{font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:.08em; color:rgba(245,241,230,0.55);}
+  .field{display:flex; flex-direction:column; gap:3px;}
+  .field label{font-family:'IBM Plex Mono',monospace; font-size:0.6rem; text-transform:uppercase; letter-spacing:.08em; color:rgba(245,241,230,0.55);}
   select.field-select{
     background:var(--navy-mid); color:var(--foam); border:1px solid var(--line-strong);
-    padding:9px 12px; font-family:'Inter',sans-serif; font-size:0.85rem; border-radius:2px; width:100%;
+    padding:8px 10px; font-family:'Inter',sans-serif; font-size:0.82rem; border-radius:2px; width:100%;
   }
 
   .spot-chips{margin-top:8px; display:flex; flex-direction:column; gap:6px;}
   .chip{
     display:flex; align-items:center; justify-content:space-between; gap:8px;
-    border:1px solid var(--line-strong); border-radius:4px; padding:8px 10px;
-    font-size:0.82rem; cursor:pointer; transition:border-color .2s, background .2s;
+    border:1px solid var(--line-strong); border-radius:4px; padding:7px 10px;
+    font-size:0.8rem; cursor:pointer; transition:border-color .2s, background .2s;
     background:rgba(13,44,62,0.25);
   }
   .chip:hover{border-color:var(--rust);}
   .chip.selected{border-color:var(--rust); background:rgba(217,98,43,0.18); font-weight:600;}
   .chip-actions{display:flex; align-items:center; gap:6px;}
   .chip .rm, .chip .ed{
-    width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-    background:rgba(245,241,230,0.08); font-size:0.72rem; line-height:1; border:none; color:inherit; cursor:pointer;
+    width:22px; height:22px; border-radius:4px; display:flex; align-items:center; justify-content:center;
+    background:rgba(245,241,230,0.08); border:none; color:inherit; cursor:pointer;
   }
   .chip .rm:hover{background:var(--rust); color:var(--navy-deep);}
   .chip .ed:hover{background:var(--sand); color:var(--navy-deep);}
-  .empty-note{font-size:0.8rem; color:rgba(245,241,230,0.45); font-family:'IBM Plex Mono',monospace; margin-top:8px;}
+  .empty-note{font-size:0.76rem; color:rgba(245,241,230,0.45); font-family:'IBM Plex Mono',monospace; margin-top:6px;}
 
-  /* Tabella sintetica sidebar */
-  .dash-wrap{margin-top:14px; padding-top:14px; border-top:1px dashed var(--line-strong);}
-  .dash-head{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;}
-  .dash-head h3{font-size:0.85rem; font-weight:600;}
+  .dash-wrap{margin-top:6px;}
+  .dash-head{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;}
+  .dash-head h3{font-size:0.82rem; font-weight:600;}
   .dash-scroll{overflow-x:auto; border:1px solid var(--line-strong); border-radius:4px;}
   table.dash-table{border-collapse:collapse; width:100%;}
-  table.dash-table th, table.dash-table td{padding:7px 8px; text-align:left; font-size:0.74rem; border-bottom:1px solid var(--line); white-space:nowrap;}
-  table.dash-table th{font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.05em; font-size:0.6rem; color:var(--rust); background:rgba(6,24,38,0.5);}
+  table.dash-table th, table.dash-table td{padding:6px 8px; text-align:left; font-size:0.72rem; border-bottom:1px solid var(--line); white-space:nowrap;}
+  table.dash-table th{font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.05em; font-size:0.58rem; color:var(--rust); background:rgba(6,24,38,0.5);}
   table.dash-table tr.dash-row{cursor:pointer;}
   table.dash-table tr.dash-row:hover{background:rgba(245,241,230,0.04);}
   table.dash-table tr.dash-row.selected{background:rgba(217,98,43,0.12);}
@@ -224,7 +275,7 @@
   .score-pill.good{border-color:var(--seaweed); color:#9fd39a; background:rgba(90,125,84,0.15);}
   .score-pill.mid{border-color:var(--rust); color:#f0a878; background:rgba(217,98,43,0.12);}
   .score-pill.low{border-color:rgba(245,241,230,0.3); color:rgba(245,241,230,0.55);}
-  .dash-hint{margin-top:8px; font-size:0.68rem; color:rgba(245,241,230,0.45); font-family:'IBM Plex Mono',monospace; line-height:1.35;}
+  .dash-hint{margin-top:6px; font-size:0.65rem; color:rgba(245,241,230,0.45); font-family:'IBM Plex Mono',monospace; line-height:1.3;}
 
   /* ---------- HEADER PRINCIPALE ---------- */
   header{
@@ -239,7 +290,7 @@
   .logo span{color:var(--rust);}
   .btn-sidebar-toggle{
     display:flex; align-items:center; gap:6px;
-    padding:7px 12px; font-size:0.72rem;
+    padding:7px 12px; font-size:0.72rem; cursor:pointer;
   }
   nav ul{display:flex; gap:22px; list-style:none; flex-wrap:wrap; row-gap:6px;}
   nav a{font-size:0.82rem; text-decoration:none; color:var(--foam); opacity:0.75; transition:opacity .2s;}
@@ -251,43 +302,109 @@
   }
 
   /* ---------- HERO ---------- */
-  .hero{padding:40px 0 20px;}
+  .hero{padding:36px 0 16px;}
   .hero h1{font-size:clamp(1.9rem,4vw,2.9rem); font-weight:600; max-width:780px; line-height:1.1;}
   .hero h1 em{font-style:italic; color:var(--sand);}
-  .hero p.lead{max-width:640px; margin-top:12px; color:rgba(245,241,230,0.72); font-size:0.95rem;}
+  .hero p.lead{max-width:640px; margin-top:10px; color:rgba(245,241,230,0.72); font-size:0.95rem;}
 
-  /* ---------- FILTRI METEO & PLANCIA ---------- */
-  .meteo-filter-card{
-    margin-top:20px;
-    padding:16px 20px;
-    border:1px solid var(--line-strong);
-    border-radius:4px;
-    background:rgba(13,44,62,0.3);
-  }
-  .filter-row{
-    display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;
-  }
-  .filter-row .field{flex:1; min-width:140px;}
-  @media(max-width:600px){
-    .filter-row{flex-direction:column; align-items:stretch;}
-    .filter-row .field{width:100%;}
-    .filter-row .btn-outline{width:100%;}
+  /* ---------------------------------------------------------
+   STILE UNIFICATO PER LE SEZIONI DI CONTENUTO PRINCIPALE
+  --------------------------------------------------------- */
+  main > section {
+    padding: 0;
   }
 
-  .plancia{
-    margin-top:20px;
-    border:1px solid var(--line-strong);
-    background:linear-gradient(180deg, rgba(13,44,62,0.55), rgba(6,24,38,0.55));
-    border-radius:4px;
-    overflow:hidden;
+  .content-section-card {
+    background: linear-gradient(180deg, rgba(13,44,62,0.55), rgba(6,24,38,0.55));
+    border: 1px solid var(--line-strong);
+    border-radius: 4px;
+    overflow: hidden;
+    padding: 24px;
   }
-  .plancia-head{
-    display:flex; justify-content:space-between; align-items:baseline;
-    padding:16px 20px; border-bottom:1px solid var(--line);
-    flex-wrap:wrap; gap:8px;
+
+  .main-area > section + section {
+    margin-top: 28px;
   }
-  .plancia-head h2{font-size:1.1rem; font-weight:600;}
+  .hero + .content-section-card {
+    margin-top: 20px;
+  }
+
+  .plancia, .forecast-section, #extraPlancia, #sunMoonPlancia, #mapWrap, #techGrid, #calTable {
+    background: none;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+  }
+  .content-section-card .wrap {
+    padding: 0;
+  }
+
+  /* ---------- 1. PLANCIA CON BOTTONI ALLINEATI A DESTRA ---------- */
+  #plancia .plancia-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding: 0 0 14px 0;
+    border-bottom:1px solid var(--line);
+    margin-bottom: 15px;
+    flex-wrap:wrap;
+    gap:14px;
+  }
+  .plancia-title-wrap{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    min-width:240px;
+  }
+  .plancia-head h2{
+    font-size:1.15rem; font-weight:600;
+    display:flex; align-items:center; flex-wrap:wrap; gap:8px;
+  }
+  .plancia-day-badge{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.8rem;
+    font-weight:500;
+    color:var(--sand);
+    background:rgba(233,223,199,0.12);
+    border:1px solid rgba(233,223,199,0.28);
+    padding:3px 9px;
+    border-radius:3px;
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    text-transform:capitalize;
+  }
   .plancia-head .updated{font-size:0.7rem; color:rgba(245,241,230,0.5); font-family:'IBM Plex Mono',monospace;}
+
+  /* Bottoni della plancia ancorati a destra */
+  .plancia-quick-btns{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    flex-wrap:wrap;
+    margin-left:auto; /* Spinge i bottoni completamente sulla destra */
+  }
+  .plancia-quick-btns .btn-outline{
+    padding:6px 12px;
+    font-size:0.72rem;
+  }
+  @media(max-width:680px){
+    #plancia .plancia-head{
+      flex-direction:column;
+      align-items:flex-start;
+      gap:10px;
+    }
+    .plancia-quick-btns{
+      margin-left:0;
+      width:100%;
+    }
+    .plancia-quick-btns .btn-outline{
+      flex:1;
+      padding:8px 6px;
+    }
+  }
+
   .gauges{
     display:grid; grid-template-columns:repeat(5,1fr);
   }
@@ -317,54 +434,111 @@
   .score-bar .fill{height:100%; background:var(--rust);}
   .plancia-empty{padding:40px 20px; text-align:center; color:rgba(245,241,230,0.5); font-size:0.88rem; grid-column:1 / -1;}
 
-  /* ---------- TABELLA PREVISIONI & CONTROLLI MODALITÀ ---------- */
-  .forecast-section{margin-top:28px;}
-  .fc-controls{
+  /* ---------- 2. TABELLA PREVISIONI (7 GIORNI -> CLICK -> ALBA & SERA) ---------- */
+  .fc-top-bar{
     display:flex;
     justify-content:space-between;
     align-items:center;
     flex-wrap:wrap;
     gap:10px;
-    margin-bottom:12px;
-    padding:12px 14px;
+    margin-bottom:14px;
+    padding:10px 14px;
     background:rgba(13,44,62,0.35);
     border:1px solid var(--line-strong);
     border-radius:4px;
   }
-  .fc-mode-group{
-    display:flex;
-    gap:8px;
-    flex-wrap:wrap;
-  }
-  .fc-day-label{
-    font-size:0.82rem;
-    color:var(--sand);
+  .fc-view-title{
     font-family:'IBM Plex Mono',monospace;
-  }
-  @media(max-width:600px){
-    .fc-controls{flex-direction:column; align-items:stretch;}
-    .fc-mode-group{width:100%;}
-    .fc-mode-group button{flex:1; padding:8px 6px; font-size:0.68rem;}
-    .fc-day-label{text-align:center;}
+    font-size:0.84rem;
+    color:var(--sand);
+    display:flex;
+    align-items:center;
+    gap:8px;
   }
 
-  .window-summary{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line-strong); border:1px solid var(--line-strong); margin-bottom:16px; border-radius:4px; overflow:hidden;}
-  @media(max-width:700px){ .window-summary{grid-template-columns:repeat(2,1fr);} }
-  .window-summary .cell{background:var(--navy-deep); padding:14px; }
-  .window-summary .cell .l{font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:.08em; color:rgba(245,241,230,0.5);}
-  .window-summary .cell .v{font-family:'IBM Plex Mono',monospace; font-size:1.3rem; margin-top:4px;}
+  /* Riquadri Alba e Sera quando si seleziona un giorno */
+  .day-windows-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin-bottom:20px;
+  }
+  @media(max-width:720px){
+    .day-windows-grid{grid-template-columns:1fr;}
+  }
+  .window-card{
+    background:linear-gradient(180deg, rgba(13,44,62,0.65), rgba(6,24,38,0.75));
+    border:1px solid var(--line-strong);
+    border-radius:4px;
+    padding:18px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .window-card.dawn{border-top:3px solid #f0a878;}
+  .window-card.dusk{border-top:3px solid var(--rust);}
+  .window-card-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    border-bottom:1px solid var(--line);
+    padding-bottom:10px;
+  }
+  .window-card-title{
+    font-family:'Fraunces',serif;
+    font-size:1.15rem;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .window-card-time{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.72rem;
+    color:rgba(245,241,230,0.6);
+    margin-top:2px;
+  }
+  .window-stats-grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:8px 14px;
+    font-size:0.8rem;
+  }
+  .w-stat{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .w-stat .lbl{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.62rem;
+    text-transform:uppercase;
+    color:rgba(245,241,230,0.5);
+  }
+  .w-stat .val{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.95rem;
+    font-weight:500;
+  }
+
   .fc-scroll{overflow-x:auto; border:1px solid var(--line-strong); border-radius:4px;}
-  table.fc{border-collapse:collapse; width:100%; min-width:840px;}
-  table.fc th, table.fc td{padding:10px 12px; text-align:left; font-size:0.78rem; border-bottom:1px solid var(--line); white-space:nowrap;}
-  table.fc th{font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.06em; font-size:0.64rem; color:var(--rust); background:rgba(6,24,38,0.75); position:sticky; top:0;}
-  table.fc tbody tr:hover{background:rgba(245,241,230,0.04);}
+  table.fc{border-collapse:collapse; width:100%; min-width:760px;}
+  table.fc th, table.fc td{padding:11px 12px; text-align:left; font-size:0.8rem; border-bottom:1px solid var(--line); white-space:nowrap;}
+  table.fc th{font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.06em; font-size:0.64rem; color:var(--rust); background:rgba(6,24,38,0.85); position:sticky; top:0;}
+  table.fc tbody tr.clickable-row{cursor:pointer; transition:background .15s;}
+  table.fc tbody tr.clickable-row:hover{background:rgba(217,98,43,0.12);}
+  table.fc tbody tr.clickable-row:hover td:first-child{color:var(--rust);}
   table.fc td.mono{font-family:'IBM Plex Mono',monospace;}
 
   /* ---------- SEZIONI SECONDARIE ---------- */
-  section{padding:48px 0;}
-  @media(max-width:600px){ section{padding:32px 0;} }
-  section.alt{background:rgba(13,44,62,0.25); border-top:1px solid var(--line); border-bottom:1px solid var(--line);}
-  .section-head{margin-bottom:24px; max-width:680px;}
+  section.alt{
+    background:none;
+    border:none;
+  }
+  .section-head{
+    margin-bottom:20px;
+    padding-top:0;
+  }
   .section-head h2{font-size:clamp(1.35rem,2.5vw,1.85rem); font-weight:600; margin-top:6px;}
   .section-head p{color:rgba(245,241,230,0.65); margin-top:6px; font-size:0.9rem;}
 
@@ -450,21 +624,54 @@
 </head>
 <body>
 
-<div class="app-shell">
+<div class="app-shell" id="appShell">
 
   <!-- BACKDROP MOBILE SIDEBAR -->
   <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
-  <!-- MENU LATERALE A SINISTRA: GESTIONE SPOT -->
+  <!-- MENU LATERALE FISSO A SINISTRA -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-title">I tuoi punti di pesca</div>
-      <button class="close-sidebar-btn" id="closeSidebarBtn" title="Chiudi menu">×</button>
+      <button class="close-sidebar-btn" id="closeSidebarBtn" title="Collassa menu">
+        <svg class="svg-icon" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
     </div>
 
-    <div>
-      <div class="hint">Cerca per nome, clicca sulla mappa o usa il GPS per salvare le tue poste personali.</div>
-      
+    <!-- SELETTORE DATA E ORARIO NELLA SIDEBAR -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">
+        <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        Data e Orario
+      </div>
+      <div class="hint">Imposta un momento preciso per ricalcolare plancia e previsioni.</div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div class="field">
+          <label>Data</label>
+          <input type="date" id="filterDate" class="mono">
+        </div>
+        <div style="display:flex; gap:6px;">
+          <div class="field" style="flex:1;">
+            <label>Orario (plancia)</label>
+            <input type="time" id="filterFrom" class="mono">
+          </div>
+          <div class="field" style="flex:1;">
+            <label>Fino a (opz.)</label>
+            <input type="time" id="filterTo" class="mono">
+          </div>
+        </div>
+        <button class="btn-outline" id="clearFilterBtn" style="padding:7px 10px; font-size:0.7rem;">Torna a Ora attuale</button>
+      </div>
+    </div>
+
+    <!-- RICERCA E AGGIUNTA SPOT -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">
+        <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        Cerca o Aggiungi Spot
+      </div>
+      <div class="hint">Cerca per nome, clicca sulla mappa o usa il GPS.</div>
+
       <div class="search-row">
         <input type="text" id="searchInput" placeholder="Cerca una località (es. Alghero, Genova…)" class="mono">
         <button class="btn" id="searchBtn">Cerca</button>
@@ -515,8 +722,11 @@
     </div>
 
     <!-- LISTA CHIP DEI PUNTI -->
-    <div>
-      <div class="sidebar-section-title">Spot salvati</div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">
+        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+        Spot salvati
+      </div>
       <div class="spot-chips" id="spotChips"></div>
       <div class="empty-note" id="emptyNote">Nessun punto salvato. Restano memorizzati nel tuo browser.</div>
     </div>
@@ -530,7 +740,7 @@
       <div class="dash-scroll">
         <table class="dash-table" id="dashTable">
           <thead>
-            <tr><th>Punto</th><th>Mattina</th><th>Sera</th><th></th></tr>
+            <tr><th>Punto</th><th>Alba</th><th>Sera</th><th></th></tr>
           </thead>
           <tbody id="dashBody"></tbody>
         </table>
@@ -540,24 +750,25 @@
   </aside>
 
   <!-- CONTENUTO PRINCIPALE A DESTRA -->
-  <div class="main-area">
+  <div class="main-area" id="mainArea">
     <header>
       <div class="navbar wrap">
         <div class="navbar-left">
-          <button class="btn-outline btn-sidebar-toggle" id="toggleSidebarBtn">
-            <span>📍</span> <strong>Spot</strong> <span id="spotBadge" class="mono" style="color:var(--rust);">(0)</span>
+          <button class="btn-outline btn-sidebar-toggle active" id="toggleSidebarBtn" title="Mostra / Nascondi menu laterale">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+            <strong>Menu Spot</strong> <span id="spotBadge" class="mono" style="color:var(--rust);">(0)</span>
           </button>
           <div class="logo">LENZA<span>.</span></div>
         </div>
         <nav>
           <ul>
-            <li><a href="#plancia">Plancia</a></li>
-            <li><a href="#previsioni">Previsioni</a></li>
-            <li><a href="#dati-extra">Dati extra</a></li>
-            <li><a href="#sole-luna">Sole & Luna</a></li>
-            <li><a href="#mappa">Mappa</a></li>
-            <li><a href="#tecniche">Tecniche</a></li>
-            <li><a href="#calendario">Calendario</a></li>
+            <li><a href="#plancia-section">Plancia</a></li>
+            <li><a href="#previsioni-section">Previsioni</a></li>
+            <li><a href="#dati-extra-section">Dati extra</a></li>
+            <li><a href="#sole-luna-section">Sole & Luna</a></li>
+            <li><a href="#mappa-section">Mappa</a></li>
+            <li><a href="#tecniche-section">Tecniche</a></li>
+            <li><a href="#calendario-section">Calendario</a></li>
           </ul>
         </nav>
       </div>
@@ -569,62 +780,66 @@
         <div class="eyebrow">Bollettino del pescatore · ovunque tu peschi</div>
         <h1>Vento, mare e luna, <em>per i tuoi</em> spot.</h1>
         <p class="lead">Seleziona uno spot dal menu a sinistra o clicca sulla mappa. I dati meteomarini in tempo reale, la batimetria e gli indici di pesca si aggiornano istantaneamente.</p>
+      </section>
 
-        <!-- FILTRI ORARIO / FINESTRA -->
-        <div class="meteo-filter-card">
-          <div class="filter-row">
-            <div class="field">
-              <label>Data</label>
-              <input type="date" id="filterDate" class="mono">
-            </div>
-            <div class="field">
-              <label>Orario (plancia)</label>
-              <input type="time" id="filterFrom" class="mono">
-            </div>
-            <div class="field">
-              <label>Fino a (finestra, opzionale)</label>
-              <input type="time" id="filterTo" class="mono">
-            </div>
-            <button class="btn-outline" id="clearFilterBtn" style="padding:10px 14px;">Ora attuale</button>
-          </div>
-        </div>
-
-        <!-- 1. PLANCIA (PRIMA SEZIONE) -->
+      <!-- 1. PLANCIA CON GIORNO IN EVIDENZA E BOTTONI RAPIDI A DESTRA -->
+      <section id="plancia-section" class="wrap content-section-card">
         <div class="plancia" id="plancia">
           <div class="plancia-head">
-            <h2 id="plancia-title">Plancia</h2>
-            <div class="updated mono" id="updatedAt"></div>
+            <div class="plancia-title-wrap">
+              <h2 id="plancia-title">Plancia</h2>
+              <div class="updated mono" id="updatedAt"></div>
+            </div>
+            <!-- BOTTONI RAPIDI PLANCIA ANCORATI A DESTRA -->
+            <div class="plancia-quick-btns">
+              <button type="button" class="btn-outline active" id="planciaBtnNow">
+                <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                Ora attuale
+              </button>
+              <button type="button" class="btn-outline" id="planciaBtnDawn">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 2v6m-7.07.93l4.24 4.24M2 18h20M4 22h16M17.07 8.93l-4.24 4.24"/></svg>
+                Alba
+              </button>
+              <button type="button" class="btn-outline" id="planciaBtnDusk">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 10v6m-7.07-.93l4.24-4.24M2 18h20M4 22h16M17.07 15.07l-4.24-4.24"/></svg>
+                Sera
+              </button>
+            </div>
           </div>
           <div class="gauges" id="gauges">
             <div class="plancia-empty">Aggiungi o seleziona un punto dal menu a sinistra per visualizzare vento, mare, pressione, solunare e indice di pesca.</div>
           </div>
         </div>
+      </section>
 
-        <!-- 2. TABELLA PREVISIONI (SECONDA SEZIONE CON BOTTONI MODALITÀ) -->
+      <!-- 2. TABELLA PREVISIONI (7 GIORNI -> CLICK -> ALBA & SERA) -->
+      <section id="previsioni-section" class="wrap content-section-card">
         <div class="forecast-section" id="previsioni">
-          <div class="section-head" style="margin-top:32px; margin-bottom:14px;">
-            <div class="eyebrow">Dettaglio meteomarino</div>
-            <h2>Tabella previsioni & Indice orario</h2>
-            <p>Visualizza le condizioni giorno per giorno o entra nel dettaglio ora per ora con indice euristico di pesca e direzione delle correnti.</p>
-          </div>
-
-          <!-- BARRA CONTROLLI CON I 3 BOTTONI (ORA PER ORA, MATTINA, SERA) + 7 GIORNI -->
-          <div class="fc-controls">
-            <div class="fc-mode-group">
-              <button type="button" class="btn-outline active" id="btnMode7d">7 Giorni</button>
-              <button type="button" class="btn-outline" id="btnModeAllHours">Ora per ora</button>
-              <button type="button" class="btn-outline" id="btnModeMorning">Mattina</button>
-              <button type="button" class="btn-outline" id="btnModeEvening">Sera</button>
-            </div>
-            <div class="fc-day-label" id="fcCurrentDayLabel">Vista: Panoramica 7 giorni</div>
+          <div class="section-head" style="margin-top:0; margin-bottom:14px; padding-top:0;">
+            <div class="eyebrow">Previsioni settimanali</div>
+            <h2 id="fcSectionHeading">Panoramica 7 giorni</h2>
+            <p id="fcSectionSub">Clicca su un qualsiasi giorno per aprire i dettagli di <strong>Alba</strong> e <strong>Sera</strong> e l'orario completo.</p>
           </div>
 
           <div id="forecastContainer">
+            <!-- Barra di intestazione vista -->
+            <div class="fc-top-bar" id="fcTopBar" style="display:none;">
+              <div class="fc-view-title" id="fcViewTitle"></div>
+              <button type="button" class="btn-outline" id="btnBackTo7d" style="padding:6px 12px; font-size:0.72rem;">
+                <svg class="svg-icon" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                Torna ai 7 giorni
+              </button>
+            </div>
+
+            <!-- Contenitore schede Alba & Sera per il giorno cliccato -->
+            <div id="dayWindowsContainer"></div>
+
+            <!-- Tabella (7 giorni o orario del giorno selezionato) -->
             <div class="fc-scroll">
               <table class="fc" id="fcTable">
                 <thead><tr id="fcHead"></tr></thead>
                 <tbody id="fcBody">
-                  <tr><td colspan="12" class="loading">Aggiungi o seleziona un punto per vedere le previsioni.</td></tr>
+                  <tr><td colspan="8" class="loading">Aggiungi o seleziona un punto per vedere le previsioni.</td></tr>
                 </tbody>
               </table>
             </div>
@@ -633,8 +848,8 @@
       </section>
 
       <!-- 3. DATI AGGIUNTIVI -->
-      <section id="dati-extra" class="wrap alt" style="border-radius:4px; margin-top:20px;">
-        <div class="section-head">
+      <section id="dati-extra-section" class="wrap content-section-card">
+        <div class="section-head" style="margin-top:0; padding-top:0;">
           <div class="eyebrow">Parametri secondari</div>
           <h2>Dati ambientali & Stato del mare</h2>
           <p>Umidità, punto di rugiada, radiazione UV, visibilità ottica, onda di vento e mare lungo per la massima precisione.</p>
@@ -647,8 +862,8 @@
       </section>
 
       <!-- 4. SOLE, LUNA E FINESTRE SOLUNARI -->
-      <section id="sole-luna" class="wrap">
-        <div class="section-head">
+      <section id="sole-luna-section" class="wrap content-section-card">
+        <div class="section-head" style="margin-top:0; padding-top:0;">
           <div class="eyebrow">Effemeridi e knight theory</div>
           <h2>Sole, luna & Finestre solunari</h2>
           <p>Orari di alba, tramonto, ora blu e picchi di attività solunare (Major e Minor) calcolati direttamente per la latitudine e longitudine della tua posta.</p>
@@ -665,16 +880,16 @@
       </section>
 
       <!-- 5. MAPPA CARTA NAUTICA -->
-      <section id="mappa" class="wrap alt">
-        <div class="section-head">
+      <section id="mappa-section" class="wrap content-section-card">
+        <div class="section-head" style="margin-top:0; padding-top:0;">
           <div class="eyebrow">Carta nautica</div>
           <h2>La tua mappa</h2>
-          <p>Clicca sulla carta per leggere la profondità del fondale. Trascina un punto per spostarlo. Puoi attivare i livelli di batimetria ad alta risoluzione (EMODnet/GEBCO) e la segnaletica OpenSeaMap.</p>
+          <p>Usa la rotellina del mouse per zoomare. Clicca sulla carta per leggere la profondità del fondale. Trascina un punto per spostarlo. Puoi attivare i livelli di batimetria ad alta risoluzione (EMODnet/GEBCO) e la segnaletica OpenSeaMap.</p>
         </div>
         <div id="mapWrap">
           <div class="map-toolbar">
             <button class="btn-outline" id="fullscreenBtn" type="button">Schermo intero</button>
-            <span class="hint-inline">Clic = profondità · trascina = sposta lo spot · “Aggiungi dalla mappa” per un nuovo punto</span>
+            <span class="hint-inline">Zoom: rotellina mouse · Clic: profondità · Trascina: sposta spot</span>
           </div>
           <div id="map"></div>
           <div class="depth-readout" id="depthReadout" hidden></div>
@@ -685,20 +900,18 @@
       </section>
 
       <!-- 6. TECNICHE DI PESCA -->
-      <section id="tecniche">
-        <div class="wrap">
-          <div class="section-head">
-            <div class="eyebrow">Manuale di bordo</div>
-            <h2>Tecniche da riva e da barca</h2>
-            <p>Tocca una scheda per aprirla: attrezzatura essenziale, spot ideale e specie target.</p>
-          </div>
-          <div class="tech-grid" id="techGrid"></div>
+      <section id="tecniche-section" class="wrap content-section-card">
+        <div class="section-head" style="margin-top:0; padding-top:0;">
+          <div class="eyebrow">Manuale di bordo</div>
+          <h2>Tecniche da riva e da barca</h2>
+          <p>Tocca una scheda per aprirla: attrezzatura essenziale, spot ideale e specie target.</p>
         </div>
+        <div class="tech-grid" id="techGrid"></div>
       </section>
 
       <!-- 7. CALENDARIO SPECIE -->
-      <section id="calendario" class="wrap">
-        <div class="section-head">
+      <section id="calendario-section" class="wrap content-section-card">
+        <div class="section-head" style="margin-top:0; padding-top:0;">
           <div class="eyebrow">Stagionalità indicativa</div>
           <h2>Calendario delle specie</h2>
           <p>Riferito alle acque del Mediterraneo. <span class="dot"></span> presente &nbsp; <span class="dot peak"></span> periodo di punta</p>
@@ -740,6 +953,66 @@ function updateSpotBadge(){
   const badge = document.getElementById('spotBadge');
   if(badge) badge.textContent = `(${SPOTS.length})`;
 }
+
+/* ---------------------------------------------------------
+   GESTIONE SIDEBAR FISSA E COLLASSABILE
+--------------------------------------------------------- */
+const appShell = document.getElementById('appShell');
+const sidebarEl = document.getElementById('sidebar');
+const backdropEl = document.getElementById('sidebarBackdrop');
+const toggleBtn = document.getElementById('toggleSidebarBtn');
+const closeBtn = document.getElementById('closeSidebarBtn');
+
+function isMobileScreen(){
+  return window.innerWidth <= 1024;
+}
+
+function openSidebar(){
+  if(isMobileScreen()){
+    sidebarEl.classList.add('open');
+    backdropEl.classList.add('open');
+  } else {
+    sidebarEl.classList.remove('collapsed');
+    appShell.classList.remove('sidebar-collapsed');
+  }
+  toggleBtn.classList.add('active');
+  setTimeout(() => { if(map) map.invalidateSize(); }, 320);
+}
+
+function closeSidebar(){
+  if(isMobileScreen()){
+    sidebarEl.classList.remove('open');
+    backdropEl.classList.remove('open');
+  } else {
+    sidebarEl.classList.add('collapsed');
+    appShell.classList.add('sidebar-collapsed');
+  }
+  toggleBtn.classList.remove('active');
+  setTimeout(() => { if(map) map.invalidateSize(); }, 320);
+}
+
+function toggleSidebar(){
+  if(isMobileScreen()){
+    const isOpen = sidebarEl.classList.contains('open');
+    if(isOpen) closeSidebar();
+    else openSidebar();
+  } else {
+    const isCollapsed = sidebarEl.classList.contains('collapsed');
+    if(isCollapsed) openSidebar();
+    else closeSidebar();
+  }
+}
+
+toggleBtn.addEventListener('click', toggleSidebar);
+closeBtn.addEventListener('click', closeSidebar);
+backdropEl.addEventListener('click', closeSidebar);
+
+window.addEventListener('resize', ()=>{
+  if(!isMobileScreen()){
+    backdropEl.classList.remove('open');
+    sidebarEl.classList.remove('open');
+  }
+});
 
 /* ---------------------------------------------------------
    UTILS & FORMATTAZIONE
@@ -823,10 +1096,36 @@ function closestHourIndex(hourly, refDate){
   });
   return idx;
 }
-function formatRefLabel(refDate, usedNow){
-  const when = refDate.toLocaleString('it-IT',{weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
-  return usedNow ? "ora attuale · " + when : "dati alle " + when;
+
+/* ---------------------------------------------------------
+   TITOLO & GIORNO DELLA PLANCIA IN EVIDENZA
+--------------------------------------------------------- */
+function formatPlanciaHeader(spot, refDate, usedNow){
+  const dayOfWeek = refDate.toLocaleDateString('it-IT', {weekday: 'long'});
+  const capitalizedDay = dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1);
+  const dayNum = refDate.getDate();
+  const monthName = refDate.toLocaleDateString('it-IT', {month: 'long'});
+  const timeStr = refDate.toLocaleTimeString('it-IT', {hour: '2-digit', minute: '2-digit'});
+
+  const todayStr = localYmd(new Date());
+  const refStr = localYmd(refDate);
+  const isToday = (todayStr === refStr);
+  const todayPrefix = isToday ? "Oggi, " : "";
+
+  const dayFormatted = `${todayPrefix}${capitalizedDay} ${dayNum} ${monthName}`;
+
+  document.getElementById('plancia-title').innerHTML = `
+    <span>Plancia — <strong>${spot.name}</strong></span>
+    <span class="plancia-day-badge">
+      <svg class="svg-icon" viewBox="0 0 24 24" style="width:13px; height:13px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+      ${dayFormatted}
+    </span>
+  `;
+
+  const timeStatus = usedNow ? `Dati in tempo reale (ore ${timeStr})` : `Dati per le ore ${timeStr}`;
+  document.getElementById('updatedAt').textContent = timeStatus;
 }
+
 function refreshFromFilters(){
   if(currentSpot && lastWeather){
     renderDashboard(currentSpot, lastWeather, lastMarine);
@@ -868,26 +1167,6 @@ function scoreBadgeText(score){
   if(score >= 30) return "Condizioni difficili";
   return "Sconsigliato";
 }
-
-/* ---------------------------------------------------------
-   GESTIONE SIDEBAR MOBILE & TOGGLE
---------------------------------------------------------- */
-const sidebarEl = document.getElementById('sidebar');
-const backdropEl = document.getElementById('sidebarBackdrop');
-const toggleBtn = document.getElementById('toggleSidebarBtn');
-const closeBtn = document.getElementById('closeSidebarBtn');
-
-function openSidebar(){
-  sidebarEl.classList.add('open');
-  backdropEl.classList.add('open');
-}
-function closeSidebar(){
-  sidebarEl.classList.remove('open');
-  backdropEl.classList.remove('open');
-}
-toggleBtn.addEventListener('click', openSidebar);
-closeBtn.addEventListener('click', closeSidebar);
-backdropEl.addEventListener('click', closeSidebar);
 
 /* ---------------------------------------------------------
    RICERCA LOCALITÀ (Open-Meteo Geocoding)
@@ -948,7 +1227,7 @@ function openAddForm(lat, lon, suggestedName){
   document.getElementById('newType').value = "spiaggia";
   document.getElementById('newName').focus();
   document.getElementById('addForm').scrollIntoView({behavior:'smooth', block:'nearest'});
-  if(window.innerWidth <= 1024) openSidebar();
+  openSidebar();
 }
 function openEditForm(id){
   const spot = SPOTS.find(s=>s.id===id);
@@ -963,7 +1242,7 @@ function openEditForm(id){
   document.getElementById('newNotes').value = spot.notes || "";
   document.getElementById('newName').focus();
   document.getElementById('addForm').scrollIntoView({behavior:'smooth', block:'nearest'});
-  if(window.innerWidth <= 1024) openSidebar();
+  openSidebar();
 }
 function applySpotCoords(spot, lat, lon){
   spot.lat = lat;
@@ -1020,8 +1299,8 @@ document.getElementById('mapAddToggle').addEventListener('click', function(){
   this.classList.toggle('active', mapAddMode);
   this.textContent = mapAddMode ? "Clicca sulla mappa…" : "Aggiungi dalla mappa";
   if(mapAddMode){
-    if(window.innerWidth <= 1024) closeSidebar();
-    const mapSection = document.getElementById('mappa');
+    if(isMobileScreen()) closeSidebar();
+    const mapSection = document.getElementById('mappa-section');
     if(mapSection){
       mapSection.scrollIntoView({behavior:'smooth', block:'start'});
     }
@@ -1058,8 +1337,10 @@ function renderChips(){
     <div class="chip ${currentSpot && currentSpot.id===s.id ? 'selected':''}" data-id="${s.id}">
       <span>${s.name}</span>
       <div class="chip-actions">
-        <button type="button" class="ed" data-ed="${s.id}" title="Modifica">✎</button>
-        <button type="button" class="rm" data-rm="${s.id}" title="Elimina">×</button>
+        <button type="button" class="ed" data-ed="${s.id}" title="Modifica">
+          <svg class="svg-icon" viewBox="0 0 24 24" style="width:11px; height:11px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        </button>
+        <button type="button" class="rm" data-rm="${s.id}" title="Elimina">&times;</button>
       </div>
     </div>
   `).join('');
@@ -1068,7 +1349,7 @@ function renderChips(){
     chip.addEventListener('click', e=>{
       if(e.target.dataset.rm || e.target.dataset.ed || e.target.closest('button')) return;
       selectSpot(chip.dataset.id);
-      if(window.innerWidth <= 1024) closeSidebar();
+      if(isMobileScreen()) closeSidebar();
     });
   });
   box.querySelectorAll('.ed').forEach(ed=>{
@@ -1087,14 +1368,14 @@ function renderDashTable(){
       <td><strong>${s.name}</strong></td>
       <td id="score-am-${s.id}"><span class="score-pill low">—</span></td>
       <td id="score-pm-${s.id}"><span class="score-pill low">—</span></td>
-      <td><span class="rm" data-rm="${s.id}" title="Elimina">×</span></td>
+      <td><span class="rm" data-rm="${s.id}" title="Elimina">&times;</span></td>
     </tr>
   `).join('');
   body.querySelectorAll('.dash-row').forEach(row=>{
     row.addEventListener('click', e=>{
       if(e.target.dataset.rm) return;
       selectSpot(row.dataset.id);
-      if(window.innerWidth <= 1024) closeSidebar();
+      if(isMobileScreen()) closeSidebar();
     });
   });
   body.querySelectorAll('.rm').forEach(rm=>{
@@ -1108,10 +1389,11 @@ function removeSpot(id){
   if(markers[id]){ map.removeLayer(markers[id]); delete markers[id]; }
   if(currentSpot && currentSpot.id===id){
     currentSpot = null;
-    document.getElementById('plancia-title').textContent = "Plancia";
+    document.getElementById('plancia-title').innerHTML = "Plancia";
+    document.getElementById('updatedAt').textContent = "";
     document.getElementById('gauges').innerHTML = '<div class="plancia-empty">Aggiungi o seleziona un punto dal menu per vedere i dati.</div>';
     document.getElementById('extraGauges').innerHTML = '<div class="plancia-empty">Compaiono qui non appena selezioni un punto.</div>';
-    document.getElementById('fcBody').innerHTML = '<tr><td colspan="12" class="loading">Aggiungi o seleziona un punto per vedere le previsioni.</td></tr>';
+    document.getElementById('fcBody').innerHTML = '<tr><td colspan="8" class="loading">Aggiungi o seleziona un punto per vedere le previsioni.</td></tr>';
     document.getElementById('spotInfo').classList.remove('visible');
   }
   renderChips();
@@ -1134,8 +1416,7 @@ function selectSpot(id){
 async function fetchAll(spot){
   document.getElementById('gauges').innerHTML = '<div class="loading" style="padding:22px; grid-column:1/-1;">Interrogazione modelli meteomarini…</div>';
   document.getElementById('extraGauges').innerHTML = '<div class="loading" style="padding:22px; grid-column:1/-1;">Recupero dati ambientali…</div>';
-  document.getElementById('fcBody').innerHTML = '<tr><td colspan="12" class="loading">Recupero previsioni orarie…</td></tr>';
-  document.getElementById('plancia-title').textContent = "Plancia — " + spot.name;
+  document.getElementById('fcBody').innerHTML = '<tr><td colspan="8" class="loading">Recupero previsioni orarie…</td></tr>';
   renderSunMoon(spot);
 
   try{
@@ -1163,12 +1444,12 @@ async function fetchAll(spot){
     renderForecastSection(spot, weather, marine);
   }catch(err){
     document.getElementById('gauges').innerHTML = `<div class="loading" style="padding:22px; grid-column:1/-1;">Errore di caricamento: ${err.message || err}</div>`;
-    document.getElementById('fcBody').innerHTML = `<tr><td colspan="12" class="loading">Dati non disponibili: ${err.message || err}</td></tr>`;
+    document.getElementById('fcBody').innerHTML = `<tr><td colspan="8" class="loading">Dati non disponibili: ${err.message || err}</td></tr>`;
   }
 }
 
 /* ---------------------------------------------------------
-   RENDERING PLANCIA (10 GAUGES BILANCIATI IN 5 COLONNE)
+   RENDERING PLANCIA (CON DATA E ORA CHIARI)
 --------------------------------------------------------- */
 function renderDashboard(spot, weather, marine){
   const h = weather.hourly;
@@ -1176,6 +1457,8 @@ function renderDashboard(spot, weather, marine){
   const usedNow = !document.getElementById('filterDate').value && !document.getElementById('filterFrom').value;
   const idx = closestHourIndex(h, ref);
   const idx24 = Math.max(0, idx-24);
+
+  formatPlanciaHeader(spot, ref, usedNow);
 
   const temp = h.temperature_2m[idx];
   const wind = h.wind_speed_10m[idx];
@@ -1285,7 +1568,6 @@ function renderDashboard(spot, weather, marine){
       <div class="gauge-sub">Momenti di picco per predatori nelle finestre crepuscolari.</div>
     </div>
   `;
-  document.getElementById('updatedAt').textContent = formatRefLabel(ref, usedNow);
 }
 
 /* ---------------------------------------------------------
@@ -1405,7 +1687,7 @@ function renderSunMoon(spot){
 }
 
 /* ---------------------------------------------------------
-   TABELLA PREVISIONI CON BOTTONI MODALITÀ (ORA / MATTINA / SERA)
+   TABELLA PREVISIONI: 7 GIORNI -> CLICK -> ALBA & SERA
 --------------------------------------------------------- */
 function fcRowHeaderHtml(cols){
   return cols.map(c=>`<th>${c}</th>`).join('');
@@ -1422,94 +1704,228 @@ function marineValueNear(marine, key, time){
   return idx>=0 ? mh[key][idx] : null;
 }
 
-function updateFcModeButtons(activeMode, dayText){
-  document.querySelectorAll('.fc-mode-group button').forEach(b => b.classList.remove('active'));
-  const btnMap = {
-    '7d': document.getElementById('btnMode7d'),
-    'all': document.getElementById('btnModeAllHours'),
-    'am': document.getElementById('btnModeMorning'),
-    'pm': document.getElementById('btnModeEvening')
-  };
-  if(btnMap[activeMode]) btnMap[activeMode].classList.add('active');
-  const label = document.getElementById('fcCurrentDayLabel');
-  if(label) label.textContent = dayText;
-}
-
 function renderForecastSection(spot, weather, marine){
   let dateVal = document.getElementById('filterDate').value;
-  const fromVal = document.getElementById('filterFrom').value;
-  const toVal = document.getElementById('filterTo').value;
-  const container = document.getElementById('forecastContainer');
-  const h = weather.hourly;
-
-  const oldSummary = document.getElementById('windowSummary');
-  if(oldSummary) oldSummary.remove();
-
-  if(!dateVal && fromVal) dateVal = localYmd(new Date());
+  const topBar = document.getElementById('fcTopBar');
+  const dayContainer = document.getElementById('dayWindowsContainer');
+  const sectionHeading = document.getElementById('fcSectionHeading');
+  const sectionSub = document.getElementById('fcSectionSub');
 
   if(!dateVal){
-    updateFcModeButtons('7d', 'Vista: Panoramica 7 giorni');
+    topBar.style.display = 'none';
+    dayContainer.innerHTML = '';
+    sectionHeading.textContent = 'Panoramica 7 giorni';
+    sectionSub.innerHTML = 'Clicca su un qualsiasi giorno per aprire i dettagli di <strong>Alba</strong> e <strong>Sera</strong> e l\'orario completo.';
     renderOutlook7(spot, weather, marine);
     return;
   }
 
-  // Identifica la modalità attiva
-  let activeMode = 'all';
-  let modeLabel = 'Tutto il giorno (24h)';
-  if(fromVal && toVal){
-    const dObj = new Date(dateVal + 'T12:00:00');
-    const st = SunCalc.getTimes(dObj, spot.lat, spot.lon);
-    const amFrom = fmtTime(new Date(st.sunrise.getTime() - 60*60*1000));
-    const pmFrom = fmtTime(new Date(st.sunset.getTime() - 60*60*1000));
-    if(fromVal === amFrom){ activeMode = 'am'; modeLabel = `Finestra Mattina (${fromVal} - ${toVal})`; }
-    else if(fromVal === pmFrom){ activeMode = 'pm'; modeLabel = `Finestra Sera (${fromVal} - ${toVal})`; }
-    else { modeLabel = `Finestra ${fromVal} - ${toVal}`; }
+  topBar.style.display = 'flex';
+  const dObj = new Date(dateVal + 'T12:00:00');
+  const dayOfWeek = dObj.toLocaleDateString('it-IT', {weekday: 'long'});
+  const capitalizedDay = dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1);
+  const formattedDay = `${capitalizedDay} ${dObj.getDate()} ${dObj.toLocaleDateString('it-IT', {month: 'long'})}`;
+
+  document.getElementById('fcViewTitle').innerHTML = `Dettaglio: <strong>${formattedDay}</strong>`;
+  sectionHeading.textContent = `Dettaglio giorno: ${fmtDay(dateVal)}`;
+  sectionSub.textContent = 'Condizioni previste per le finestre di Alba e Sera e tabella oraria completa.';
+
+  renderDayDetail(spot, weather, marine, dateVal);
+}
+
+/* 1. Vista principale: Panoramica 7 giorni */
+function renderOutlook7(spot, weather, marine){
+  const d = weather.daily;
+  const h = weather.hourly;
+  document.getElementById('fcHead').innerHTML = fcRowHeaderHtml([
+    "Giorno",
+    "Meteo",
+    "Temp. Min/Max",
+    "Alba (indice & mare)",
+    "Sera (indice & mare)",
+    "UV max",
+    "Pioggia"
+  ]);
+
+  const avgInWindow = (arr, fromT, toT) => {
+    const vals = [];
+    h.time.forEach((t,i)=>{ const dt=new Date(t); if(dt>=fromT && dt<=toT && arr[i]!=null) vals.push(arr[i]); });
+    return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+  };
+  const avgWaveInWindow = (fromT, toT) => {
+    if(!marine || !marine.hourly || !marine.hourly.wave_height) return null;
+    const mh = marine.hourly;
+    const vals = [];
+    mh.time.forEach((t,i)=>{ const dt=new Date(t); if(dt>=fromT && dt<=toT && mh.wave_height[i]!=null) vals.push(mh.wave_height[i]); });
+    return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+  };
+
+  let rows = "";
+  for(let i=0; i<d.time.length; i++){
+    const dayStr = d.time[i];
+    const dayDate = new Date(dayStr+"T12:00:00");
+    const sunTimes = SunCalc.getTimes(dayDate, spot.lat, spot.lon);
+    const dayPhase = moonPhase(dayDate);
+
+    const amFrom = new Date(sunTimes.sunrise.getTime() - 60*60*1000);
+    const amTo = new Date(sunTimes.sunrise.getTime() + 3*60*60*1000);
+    const pmFrom = new Date(sunTimes.sunset.getTime() - 60*60*1000);
+    const pmTo = new Date(sunTimes.sunset.getTime() + 3*60*60*1000);
+
+    const amWind = avgInWindow(h.wind_speed_10m, amFrom, amTo);
+    const pmWind = avgInWindow(h.wind_speed_10m, pmFrom, pmTo);
+    const amWave = avgWaveInWindow(amFrom, amTo);
+    const pmWave = avgWaveInWindow(pmFrom, pmTo);
+
+    const amScore = calculateFishingScore(amWind, amWave, 0, dayPhase);
+    const pmScore = calculateFishingScore(pmWind, pmWave, 0, dayPhase);
+
+    let hIdx = h.time.findIndex(t => t.startsWith(dayStr) && t.endsWith("13:00"));
+    if(hIdx < 0) hIdx = h.time.findIndex(t => t.startsWith(dayStr));
+    const code = h.weather_code ? h.weather_code[hIdx] : d.weather_code[i];
+
+    rows += `<tr class="clickable-row day-row" data-day="${dayStr}">
+      <td>
+        <strong>${fmtDay(dayStr)}</strong>
+        <svg class="svg-icon" viewBox="0 0 24 24" style="width:11px; height:11px; margin-left:4px; color:var(--rust);"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </td>
+      <td>${WMO[code] || '—'}</td>
+      <td class="mono">${Math.round(d.temperature_2m_min[i])}° / ${Math.round(d.temperature_2m_max[i])}°</td>
+      <td class="mono">
+        ${scorePill(amScore)}
+        <span style="font-size:0.72rem; opacity:0.8; margin-left:4px;">${amWind!==null?Math.round(amWind)+'km/h':''}${amWave!==null?' · '+amWave.toFixed(1)+'m':''}</span>
+      </td>
+      <td class="mono">
+        ${scorePill(pmScore)}
+        <span style="font-size:0.72rem; opacity:0.8; margin-left:4px;">${pmWind!==null?Math.round(pmWind)+'km/h':''}${pmWave!==null?' · '+pmWave.toFixed(1)+'m':''}</span>
+      </td>
+      <td class="mono">${d.uv_index_max ? d.uv_index_max[i].toFixed(1) : '—'}</td>
+      <td class="mono">${d.precipitation_probability_max ? d.precipitation_probability_max[i]+'%' : '—'}</td>
+    </tr>`;
   }
-  updateFcModeButtons(activeMode, `${fmtDay(dateVal)} · ${modeLabel}`);
+  document.getElementById('fcBody').innerHTML = rows;
+
+  document.querySelectorAll('.day-row').forEach(row=>{
+    row.addEventListener('click', ()=>{
+      const day = row.dataset.day;
+      document.getElementById('filterDate').value = day;
+      refreshFromFilters();
+      document.getElementById('previsioni-section').scrollIntoView({behavior:'smooth', block:'start'});
+    });
+  });
+}
+
+/* 2. Vista dettaglio giorno: Card Alba & Sera + Dettaglio orario completo */
+function renderDayDetail(spot, weather, marine, dateVal){
+  const h = weather.hourly;
+  const dayContainer = document.getElementById('dayWindowsContainer');
+  const dObj = new Date(dateVal + 'T12:00:00');
+  const sunTimes = SunCalc.getTimes(dObj, spot.lat, spot.lon);
+  const dayPhase = moonPhase(dObj);
+
+  const amFrom = new Date(sunTimes.sunrise.getTime() - 60*60*1000);
+  const amTo = new Date(sunTimes.sunrise.getTime() + 3*60*60*1000);
+  const pmFrom = new Date(sunTimes.sunset.getTime() - 60*60*1000);
+  const pmTo = new Date(sunTimes.sunset.getTime() + 3*60*60*1000);
+
+  const avgWindow = (arr, fromT, toT) => {
+    const vals = [];
+    h.time.forEach((t,i)=>{ const dt=new Date(t); if(dt>=fromT && dt<=toT && arr[i]!=null) vals.push(arr[i]); });
+    return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+  };
+  const avgWaveWindow = (fromT, toT) => {
+    if(!marine || !marine.hourly || !marine.hourly.wave_height) return null;
+    const mh = marine.hourly;
+    const vals = [];
+    mh.time.forEach((t,i)=>{ const dt=new Date(t); if(dt>=fromT && dt<=toT && mh.wave_height[i]!=null) vals.push(mh.wave_height[i]); });
+    return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+  };
+  const avgCurrentWindow = (fromT, toT) => {
+    if(!marine || !marine.hourly || !marine.hourly.ocean_current_velocity) return null;
+    const mh = marine.hourly;
+    const vals = [];
+    mh.time.forEach((t,i)=>{ const dt=new Date(t); if(dt>=fromT && dt<=toT && mh.ocean_current_velocity[i]!=null) vals.push(mh.ocean_current_velocity[i]); });
+    return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+  };
+
+  const amWind = avgWindow(h.wind_speed_10m, amFrom, amTo);
+  const amGust = avgWindow(h.wind_gusts_10m, amFrom, amTo);
+  const amTemp = avgWindow(h.temperature_2m, amFrom, amTo);
+  const amWave = avgWaveWindow(amFrom, amTo);
+  const amCurrent = avgCurrentWindow(amFrom, amTo);
+  const amScore = calculateFishingScore(amWind, amWave, 0, dayPhase);
+
+  const pmWind = avgWindow(h.wind_speed_10m, pmFrom, pmTo);
+  const pmGust = avgWindow(h.wind_gusts_10m, pmFrom, pmTo);
+  const pmTemp = avgWindow(h.temperature_2m, pmFrom, pmTo);
+  const pmWave = avgWaveWindow(pmFrom, pmTo);
+  const pmCurrent = avgCurrentWindow(pmFrom, pmTo);
+  const pmScore = calculateFishingScore(pmWind, pmWave, 0, dayPhase);
+
+  dayContainer.innerHTML = `
+    <div class="day-windows-grid">
+      <!-- SCHEDA ALBA -->
+      <div class="window-card dawn">
+        <div class="window-card-header">
+          <div>
+            <div class="window-card-title">
+              <svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 2v6m-7.07.93l4.24 4.24M2 18h20M4 22h16M17.07 8.93l-4.24 4.24"/></svg>
+              Finestra Alba
+            </div>
+            <div class="window-card-time">${fmtTime(amFrom)} – ${fmtTime(amTo)} (Alba ${fmtTime(sunTimes.sunrise)})</div>
+          </div>
+          <div>${scorePill(amScore)}</div>
+        </div>
+        <div class="window-stats-grid">
+          <div class="w-stat"><span class="lbl">Vento medio</span><span class="val">${amWind!==null?Math.round(amWind)+' km/h':'—'}</span></div>
+          <div class="w-stat"><span class="lbl">Raffiche</span><span class="val">${amGust!==null?Math.round(amGust)+' km/h':'—'}</span></div>
+          <div class="w-stat"><span class="lbl">Moto ondoso</span><span class="val">${amWave!==null?amWave.toFixed(1)+' m':'—'}</span></div>
+          <div class="w-stat"><span class="lbl">Corrente</span><span class="val">${amCurrent!==null?amCurrent.toFixed(1)+' km/h':'—'}</span></div>
+          <div class="w-stat"><span class="lbl">Temp. aria</span><span class="val">${amTemp!==null?Math.round(amTemp)+'°C':'—'}</span></div>
+          <div class="w-stat"><span class="lbl">Valutazione</span><span class="val" style="color:var(--sand);">${scoreBadgeText(amScore)}</span></div>
+        </div>
+      </div>
+
+      <!-- SCHEDA SERA -->
+      <div class="window-card dusk">
+        <div class="window-card-header">
+          <div>
+            <div class="window-card-title">
+              <svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 10v6m-7.07-.93l4.24-4.24M2 18h20M4 22h16M17.07 15.07l-4.24-4.24"/></svg>
+              Finestra Sera
+            </div>
+            <div class="window-card-time">${fmtTime(pmFrom)} – ${fmtTime(pmTo)} (Tramonto ${fmtTime(sunTimes.sunset)})</div>
+          </div>
+          <div>${scorePill(pmScore)}</div>
+        </div>
+        <div class="window-stats-grid">
+          <div class="w-stat"><span class="lbl">Vento medio</span><span class="val">${pmWind!==null?Math.round(pmWind)+' km/h':'—'}</span></div>
+          <div class="w-stat"><span class="lbl">Raffiche</span><span class="val">${pmGust!==null?Math.round(pmGust)+' km/h':'—'}</span></div>
+          <div class="w-stat"><span class="lbl">Moto ondoso</span><span class="val">${pmWave!==null?pmWave.toFixed(1)+' m':'—'}</span></div>
+          <div class="w-stat"><span class="lbl">Corrente</span><span class="val">${pmCurrent!==null?pmCurrent.toFixed(1)+' km/h':'—'}</span></div>
+          <div class="w-stat"><span class="lbl">Temp. aria</span><span class="val">${pmTemp!==null?Math.round(pmTemp)+'°C':'—'}</span></div>
+          <div class="w-stat"><span class="lbl">Valutazione</span><span class="val" style="color:var(--sand);">${scoreBadgeText(pmScore)}</span></div>
+        </div>
+      </div>
+    </div>
+  `;
 
   const dayIndices = h.time.map((t,i)=>i).filter(i => h.time[i].startsWith(dateVal));
-  if(dayIndices.length === 0){
-    document.getElementById('fcHead').innerHTML = '';
-    document.getElementById('fcBody').innerHTML = '<tr><td class="loading">Nessun dato per questa data.</td></tr>';
-    return;
-  }
+  document.getElementById('fcHead').innerHTML = fcRowHeaderHtml([
+    "Ora",
+    "Indice",
+    "Meteo",
+    "Temp",
+    "Vento",
+    "Raffiche",
+    "Onda",
+    "Corrente",
+    "Pressione",
+    "UV",
+    "Pioggia"
+  ]);
 
-  let indices = dayIndices;
-  if(fromVal && toVal){
-    indices = dayIndices.filter(i=>{
-      const hh = h.time[i].slice(11,16);
-      return hh >= fromVal && hh <= toVal;
-    });
-    if(indices.length === 0) indices = dayIndices;
-
-    const avg = arr => { const vals = indices.map(i=>arr[i]).filter(v=>v!=null); return vals.length? vals.reduce((a,b)=>a+b,0)/vals.length : null; };
-    const avgWind = avg(h.wind_speed_10m);
-    const avgGust = avg(h.wind_gusts_10m);
-    const avgTemp = avg(h.temperature_2m);
-    const avgPrecipProb = avg(h.precipitation_probability);
-    let avgWave = null, avgCurrent = null;
-    if(marine && marine.hourly){
-      const waveArr = indices.map(i=>marineValueNear(marine,'wave_height', h.time[i])).filter(v=>v!=null);
-      avgWave = waveArr.length ? waveArr.reduce((a,b)=>a+b,0)/waveArr.length : null;
-      const curArr = indices.map(i=>marineValueNear(marine,'ocean_current_velocity', h.time[i])).filter(v=>v!=null);
-      avgCurrent = curArr.length ? curArr.reduce((a,b)=>a+b,0)/curArr.length : null;
-    }
-    const summaryHtml = `
-      <div class="window-summary" id="windowSummary">
-        <div class="cell"><div class="l">Vento medio</div><div class="v">${avgWind!==null?Math.round(avgWind)+' km/h':'—'}</div></div>
-        <div class="cell"><div class="l">Raffiche medie</div><div class="v">${avgGust!==null?Math.round(avgGust)+' km/h':'—'}</div></div>
-        <div class="cell"><div class="l">Temp. media</div><div class="v">${avgTemp!==null?Math.round(avgTemp)+'°C':'—'}</div></div>
-        <div class="cell"><div class="l">Prob. pioggia</div><div class="v">${avgPrecipProb!==null?Math.round(avgPrecipProb)+'%':'—'}</div></div>
-        <div class="cell"><div class="l">Onda media</div><div class="v">${avgWave!==null?avgWave.toFixed(1)+' m':'—'}</div></div>
-        <div class="cell"><div class="l">Corrente media</div><div class="v">${avgCurrent!==null?avgCurrent.toFixed(1)+' km/h':'—'}</div></div>
-      </div>
-    `;
-    container.insertAdjacentHTML('afterbegin', summaryHtml);
-  }
-
-  document.getElementById('fcHead').innerHTML = fcRowHeaderHtml(["Ora","Indice pesca","Meteo","Temp","Vento","Raffiche","Onda","Corrente (vel & dir)","Pressione","UV","Pioggia"]);
-  
-  document.getElementById('fcBody').innerHTML = indices.map(i=>{
+  document.getElementById('fcBody').innerHTML = dayIndices.map(i=>{
     const t = h.time[i];
     const wave = marineValueNear(marine,'wave_height', t);
     const currentVel = marineValueNear(marine,'ocean_current_velocity', t);
@@ -1534,145 +1950,86 @@ function renderForecastSection(spot, weather, marine){
   }).join('');
 }
 
-function renderOutlook7(spot, weather, marine){
-  const d = weather.daily;
-  const h = weather.hourly;
-  document.getElementById('fcHead').innerHTML = fcRowHeaderHtml(["Giorno","Indice pesca medio","Meteo","Temp","UV max","Mattina (alba -1h/+3h)","Sera (tram. -1h/+3h)","Dettaglio"]);
-
-  const avgInWindow = (arr, fromT, toT) => {
-    const vals = [];
-    h.time.forEach((t,i)=>{ const dt=new Date(t); if(dt>=fromT && dt<=toT && arr[i]!=null) vals.push(arr[i]); });
-    return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
-  };
-  const avgWaveInWindow = (fromT, toT) => {
-    if(!marine || !marine.hourly || !marine.hourly.wave_height) return null;
-    const mh = marine.hourly;
-    const vals = [];
-    mh.time.forEach((t,i)=>{ const dt=new Date(t); if(dt>=fromT && dt<=toT && mh.wave_height[i]!=null) vals.push(mh.wave_height[i]); });
-    return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
-  };
-
-  let rows = "";
-  for(let i=0;i<d.time.length;i++){
-    const dayStr = d.time[i];
-    const dayDate = new Date(dayStr+"T12:00:00");
-    const sunTimes = SunCalc.getTimes(dayDate, spot.lat, spot.lon);
-    const dayPhase = moonPhase(dayDate);
-
-    const amFrom = new Date(sunTimes.sunrise.getTime() - 60*60*1000);
-    const amTo = new Date(sunTimes.sunrise.getTime() + 3*60*60*1000);
-    const pmFrom = new Date(sunTimes.sunset.getTime() - 60*60*1000);
-    const pmTo = new Date(sunTimes.sunset.getTime() + 3*60*60*1000);
-
-    const amWind = avgInWindow(h.wind_speed_10m, amFrom, amTo);
-    const pmWind = avgInWindow(h.wind_speed_10m, pmFrom, pmTo);
-    const amWave = avgWaveInWindow(amFrom, amTo);
-    const pmWave = avgWaveInWindow(pmFrom, pmTo);
-
-    const amScore = calculateFishingScore(amWind, amWave, 0, dayPhase);
-    const pmScore = calculateFishingScore(pmWind, pmWave, 0, dayPhase);
-    const dayAvgScore = Math.round((amScore + pmScore) / 2);
-
-    let hIdx = h.time.findIndex(t => t.startsWith(dayStr) && t.endsWith("13:00"));
-    if(hIdx < 0) hIdx = h.time.findIndex(t => t.startsWith(dayStr));
-    const code = h.weather_code ? h.weather_code[hIdx] : d.weather_code[i];
-
-    rows += `<tr class="day-row" data-day="${dayStr}"
-        data-am-from="${fmtTime(amFrom)}" data-am-to="${fmtTime(amTo)}"
-        data-pm-from="${fmtTime(pmFrom)}" data-pm-to="${fmtTime(pmTo)}">
-      <td class="day-cell" style="cursor:pointer;"><strong>${fmtDay(dayStr)}</strong></td>
-      <td>${scorePill(dayAvgScore)}</td>
-      <td>${WMO[code] || '—'}</td>
-      <td class="mono">${Math.round(d.temperature_2m_min[i])}° / ${Math.round(d.temperature_2m_max[i])}°</td>
-      <td class="mono">${d.uv_index_max ? d.uv_index_max[i].toFixed(1) : '—'}</td>
-      <td class="mono">${scorePill(amScore)} <span style="font-size:0.7rem; opacity:0.8;">${amWind!==null?Math.round(amWind)+'km/h':''} ${amWave!==null?'· '+amWave.toFixed(1)+'m':''}</span></td>
-      <td class="mono">${scorePill(pmScore)} <span style="font-size:0.7rem; opacity:0.8;">${pmWind!==null?Math.round(pmWind)+'km/h':''} ${pmWave!==null?'· '+pmWave.toFixed(1)+'m':''}</span></td>
-      <td>
-        <button class="btn-outline day-btn-full" style="padding:4px 8px; font-size:0.65rem;">Ore</button>
-        <button class="btn-outline day-btn-am" style="padding:4px 8px; font-size:0.65rem;">Mattina</button>
-        <button class="btn-outline day-btn-pm" style="padding:4px 8px; font-size:0.65rem;">Sera</button>
-      </td>
-    </tr>`;
-  }
-  document.getElementById('fcBody').innerHTML = rows;
-
-  document.querySelectorAll('.day-cell, .day-btn-full').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      const row = el.closest('.day-row');
-      applyDayFilter(row.dataset.day, '', '');
-    });
-  });
-  document.querySelectorAll('.day-btn-am').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      const row = el.closest('.day-row');
-      applyDayFilter(row.dataset.day, row.dataset.amFrom, row.dataset.amTo);
-    });
-  });
-  document.querySelectorAll('.day-btn-pm').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      const row = el.closest('.day-row');
-      applyDayFilter(row.dataset.day, row.dataset.pmFrom, row.dataset.pmTo);
-    });
-  });
-}
-
-function applyDayFilter(dayStr, fromStr, toStr){
-  document.getElementById('filterDate').value = dayStr;
-  document.getElementById('filterFrom').value = fromStr;
-  document.getElementById('filterTo').value = toStr;
+/* Pulsante per tornare alla vista a 7 giorni */
+document.getElementById('btnBackTo7d').addEventListener('click', ()=>{
+  document.getElementById('filterDate').value = '';
+  document.getElementById('filterFrom').value = '';
+  document.getElementById('filterTo').value = '';
+  updatePlanciaButtons('now');
   refreshFromFilters();
-  document.getElementById('previsioni').scrollIntoView({behavior:'smooth', block:'start'});
-}
+  document.getElementById('previsioni-section').scrollIntoView({behavior:'smooth', block:'start'});
+});
 
 /* ---------------------------------------------------------
-   HANDLERS PER I 3 BOTTONI DI VISTA RAPIDA (ORA, MATTINA, SERA)
+   BOTTONI RAPIDI NELLA PLANCIA (ORA ATTUALE, ALBA, SERA)
 --------------------------------------------------------- */
 function getActiveDayString(){
   const cur = document.getElementById('filterDate').value;
   return cur || localYmd(new Date());
 }
 
-document.getElementById('btnMode7d').addEventListener('click', ()=>{
-  document.getElementById('filterDate').value = '';
+function updatePlanciaButtons(mode){
+  document.querySelectorAll('.plancia-quick-btns button').forEach(b => b.classList.remove('active'));
+  if(mode === 'now') document.getElementById('planciaBtnNow').classList.add('active');
+  if(mode === 'dawn') document.getElementById('planciaBtnDawn').classList.add('active');
+  if(mode === 'dusk') document.getElementById('planciaBtnDusk').classList.add('active');
+}
+
+document.getElementById('planciaBtnNow').addEventListener('click', ()=>{
+  document.getElementById('filterDate').value = localYmd(new Date());
   document.getElementById('filterFrom').value = '';
   document.getElementById('filterTo').value = '';
+  updatePlanciaButtons('now');
   refreshFromFilters();
 });
 
-document.getElementById('btnModeAllHours').addEventListener('click', ()=>{
+document.getElementById('planciaBtnDawn').addEventListener('click', ()=>{
   const day = getActiveDayString();
-  applyDayFilter(day, '', '');
+  if(!currentSpot){
+    document.getElementById('filterDate').value = day;
+    document.getElementById('filterFrom').value = '06:00';
+    document.getElementById('filterTo').value = '09:00';
+  } else {
+    const dObj = new Date(day + 'T12:00:00');
+    const st = SunCalc.getTimes(dObj, currentSpot.lat, currentSpot.lon);
+    document.getElementById('filterDate').value = localYmd(st.sunrise);
+    document.getElementById('filterFrom').value = fmtTime(new Date(st.sunrise.getTime() - 60*60*1000));
+    document.getElementById('filterTo').value = fmtTime(new Date(st.sunrise.getTime() + 3*60*60*1000));
+  }
+  updatePlanciaButtons('dawn');
+  refreshFromFilters();
 });
 
-document.getElementById('btnModeMorning').addEventListener('click', ()=>{
+document.getElementById('planciaBtnDusk').addEventListener('click', ()=>{
   const day = getActiveDayString();
-  if(!currentSpot){ applyDayFilter(day, '06:00', '09:00'); return; }
-  const dObj = new Date(day + 'T12:00:00');
-  const st = SunCalc.getTimes(dObj, currentSpot.lat, currentSpot.lon);
-  const amFrom = fmtTime(new Date(st.sunrise.getTime() - 60*60*1000));
-  const amTo = fmtTime(new Date(st.sunrise.getTime() + 3*60*60*1000));
-  applyDayFilter(day, amFrom, amTo);
-});
-
-document.getElementById('btnModeEvening').addEventListener('click', ()=>{
-  const day = getActiveDayString();
-  if(!currentSpot){ applyDayFilter(day, '18:00', '21:00'); return; }
-  const dObj = new Date(day + 'T12:00:00');
-  const st = SunCalc.getTimes(dObj, currentSpot.lat, currentSpot.lon);
-  const pmFrom = fmtTime(new Date(st.sunset.getTime() - 60*60*1000));
-  const pmTo = fmtTime(new Date(st.sunset.getTime() + 3*60*60*1000));
-  applyDayFilter(day, pmFrom, pmTo);
+  if(!currentSpot){
+    document.getElementById('filterDate').value = day;
+    document.getElementById('filterFrom').value = '19:30';
+    document.getElementById('filterTo').value = '22:30';
+  } else {
+    const dObj = new Date(day + 'T12:00:00');
+    const st = SunCalc.getTimes(dObj, currentSpot.lat, currentSpot.lon);
+    document.getElementById('filterDate').value = localYmd(st.sunset);
+    document.getElementById('filterFrom').value = fmtTime(new Date(st.sunset.getTime() - 60*60*1000));
+    document.getElementById('filterTo').value = fmtTime(new Date(st.sunset.getTime() + 3*60*60*1000));
+  }
+  updatePlanciaButtons('dusk');
+  refreshFromFilters();
 });
 
 ['filterDate','filterFrom','filterTo'].forEach(id=>{
   const el = document.getElementById(id);
-  el.addEventListener('change', refreshFromFilters);
+  el.addEventListener('change', ()=>{
+    if(id === 'filterFrom' || id === 'filterTo') updatePlanciaButtons('');
+    refreshFromFilters();
+  });
   el.addEventListener('input', refreshFromFilters);
 });
 document.getElementById('clearFilterBtn').addEventListener('click', ()=>{
   document.getElementById('filterDate').value = '';
   document.getElementById('filterFrom').value = '';
   document.getElementById('filterTo').value = '';
+  updatePlanciaButtons('now');
   refreshFromFilters();
 });
 
@@ -1741,11 +2098,11 @@ async function computeAllScores(){
 document.getElementById('refreshScoresBtn').addEventListener('click', computeAllScores);
 
 /* ---------------------------------------------------------
-   MAPPA & BATIMETRIA (Leaflet)
+   MAPPA & BATIMETRIA (Leaflet - ZOOM ROTELINA ATTIVO)
 --------------------------------------------------------- */
 let map, markers = {};
 function initMap(){
-  map = L.map('map', {scrollWheelZoom:false}).setView([42.5, 12.5], 5);
+  map = L.map('map', {scrollWheelZoom: true}).setView([42.5, 12.5], 5);
 
   L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
@@ -1801,8 +2158,6 @@ function initMap(){
   function syncMapFullscreen(){
     const on = mapIsFullscreen();
     fsBtn.textContent = on ? "Esci da schermo intero" : "Schermo intero";
-    if(on) map.scrollWheelZoom.enable();
-    else map.scrollWheelZoom.disable();
     setTimeout(()=> map.invalidateSize(), 120);
   }
   fsBtn.addEventListener('click', async ()=>{
@@ -1938,7 +2293,7 @@ const TECHNIQUES = [
   {name:"Surfcasting", tag:"Da riva · spiaggia", desc:"Lanci a grande distanza oltre i frangenti con piombi da 100-175g.", spec:"Target: orata, spigola, mormora, sarago. Ideale con mareggiate in scaduta o nelle ore notturne."},
   {name:"Bolentino", tag:"Da barca · roccia/misto", desc:"Pesca in verticale a fondo con terminale a più braccioli.", spec:"Target: saraghi, pagelli, orate, occhiate. Ottimo in presenza di corrente moderata su secche."},
   {name:"Spinning costiero", tag:"Da riva · scogliera/foce", desc:"Lancio e recupero continuo di esche artificiali (minnow, jerk, popper).", spec:"Target: spigola, serra, leccia amia, barracuda. Massima resa all'alba, tramonto o cambi di luce."},
-  {name:"Traina costiera", tag:"Da barca · in moto", desc:"Avanzamento a 3-5 nodi trainando esche artificiali o aguglie vive.", spec:"Target: palamite, lampughe, tombarelli, ricciole. Rende sui cigli e salti di fondale."},
+  {name:"Traina costiera", tag:"Da barca · in moto", desc:"Avanzamento a 3-5 nodi trainando esche artificiali o aguglie vives.", spec:"Target: palamite, lampughe, tombarelli, ricciole. Rende sui cigli e salti di fondale."},
   {name:"Bolognese / Feeder", tag:"Da riva · porto/scogliera", desc:"Canna lunga e galleggiante o pasturatore sul fondo con terminali sottili.", spec:"Target: cefalo, spigola, sarago, orata. Efficace nelle acque calme interne o porti canale."},
   {name:"Eging (Cefalopodi)", tag:"Da riva o barca", desc:"Pesca mirata a totani, calamari e seppie con totanare artificiali.", spec:"Target: seppia (primavera/autunno), calamaro e totano (autunno/inverno nelle ore buie)."}
 ];
