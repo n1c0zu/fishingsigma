@@ -86,10 +86,11 @@
   .points-panel h2{font-size:1.05rem; font-weight:600; margin-bottom:4px;}
   .points-panel .hint{font-size:0.82rem; color:rgba(245,241,230,0.6); margin-bottom:16px;}
   .search-row{display:flex; gap:10px; flex-wrap:wrap;}
-  input[type="text"], input[type="number"]{
+  input[type="text"], input[type="number"], input[type="date"], input[type="time"], textarea{
     background:var(--navy-mid); color:var(--foam); border:1px solid var(--line-strong);
     padding:11px 14px; font-family:'Inter',sans-serif; font-size:0.88rem; border-radius:2px;
   }
+  textarea{min-width:220px; min-height:64px; resize:vertical; font-family:'Inter',sans-serif;}
   #searchInput{flex:1; min-width:220px;}
   .btn{
     background:var(--rust); color:var(--navy-deep); border:1px solid var(--rust);
@@ -134,7 +135,7 @@
   @media(max-width:600px){
     .add-form{flex-direction:column; align-items:stretch; gap:14px;}
     .add-form .field{width:100%;}
-    .add-form input, .add-form select{width:100%; font-size:16px;}
+    .add-form input, .add-form select, .add-form textarea{width:100%; font-size:16px;}
     .coord-input{width:100%;}
     .add-form .btn, .add-form .btn-outline{width:100%;}
   }
@@ -147,11 +148,12 @@
   }
   .chip:hover{border-color:var(--rust);}
   .chip.selected{border-color:var(--rust); background:rgba(217,98,43,0.12);}
-  .chip .rm{
-    width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-    background:rgba(245,241,230,0.08); font-size:0.8rem; line-height:1;
+  .chip .rm, .chip .ed{
+    width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:rgba(245,241,230,0.08); font-size:0.72rem; line-height:1; border:none; color:inherit; cursor:pointer;
   }
   .chip .rm:hover{background:var(--rust); color:var(--navy-deep);}
+  .chip .ed:hover{background:var(--sand); color:var(--navy-deep);}
   .empty-note{font-size:0.85rem; color:rgba(245,241,230,0.45); margin-top:14px; font-family:'IBM Plex Mono',monospace;}
 
   .dash-wrap{margin-top:22px; padding-top:20px; border-top:1px dashed var(--line-strong);}
@@ -224,6 +226,9 @@
   .section-head p{color:rgba(245,241,230,0.65); margin-top:10px; font-size:0.95rem;}
 
   /* map */
+  #mapWrap{position:relative;}
+  .map-toolbar{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px;}
+  .map-toolbar .hint-inline{font-size:0.78rem; color:rgba(245,241,230,0.55); font-family:'IBM Plex Mono',monospace; flex:1; min-width:180px;}
   #map{height:460px; width:100%; border:1px solid var(--line-strong); border-radius:4px; cursor:crosshair;}
   #map .osm-base-tile{filter:invert(94%) hue-rotate(180deg) brightness(0.95) contrast(0.88) saturate(0.9);}
   #map .leaflet-control-layers{
@@ -234,6 +239,29 @@
   #map .leaflet-control-layers label{margin-bottom:6px; display:block;}
   @media(max-width:600px){ #map{height:340px;} }
   .map-note{margin-top:12px; font-size:0.8rem; color:rgba(245,241,230,0.55); font-family:'IBM Plex Mono',monospace;}
+  #mapWrap:fullscreen, #mapWrap.is-fullscreen{
+    position:fixed; inset:0; z-index:400; width:100%; height:100%;
+    background:var(--navy-deep); padding:12px; display:flex; flex-direction:column;
+    box-sizing:border-box;
+  }
+  #mapWrap:fullscreen #map, #mapWrap.is-fullscreen #map{
+    flex:1; height:auto !important; min-height:0; border:none; border-radius:0;
+  }
+  #mapWrap:fullscreen .map-toolbar, #mapWrap.is-fullscreen .map-toolbar{margin-bottom:8px;}
+  .depth-readout{
+    position:absolute; left:12px; bottom:12px; z-index:500;
+    background:rgba(6,24,38,0.92); border:1px solid var(--line-strong);
+    padding:10px 14px; border-radius:4px; max-width:min(360px, calc(100% - 24px));
+    font-size:0.82rem; pointer-events:none;
+  }
+  #mapWrap:fullscreen .depth-readout, #mapWrap.is-fullscreen .depth-readout{bottom:24px;}
+  .spot-marker{background:transparent; border:none;}
+  .spot-marker span{
+    display:block; width:14px; height:14px; border-radius:50%;
+    background:rgba(217,98,43,0.55); border:2px solid #d9622b;
+  }
+  .spot-marker.selected span{width:18px; height:18px; background:rgba(217,98,43,0.95);}
+  .spot-actions{display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;}
 
   /* forecast table */
   .filter-row{display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap; margin-bottom:24px; padding:18px; border:1px solid var(--line-strong); border-radius:4px; background:rgba(13,44,62,0.25);}
@@ -358,6 +386,10 @@
           <label>Longitudine</label>
           <input type="number" step="0.0001" class="coord-input mono" id="newLon">
         </div>
+        <div class="field" style="flex:1; min-width:220px;">
+          <label>Note / caratteristiche</label>
+          <textarea id="newNotes" placeholder="Es. fondale misto, corrente da levante, parcheggio vicino…"></textarea>
+        </div>
         <button class="btn" id="confirmAdd">Salva punto</button>
         <button class="btn-outline" id="cancelAdd">Annulla</button>
       </div>
@@ -382,13 +414,37 @@
       </div>
     </div>
 
+    <div class="meteo-block" id="meteo">
+      <div class="section-head" style="margin-top:36px;">
+        <div class="eyebrow">Orario e plancia</div>
+        <h2>Vento, mare e pressione</h2>
+        <p>Imposta data e orario qui sotto: la plancia si ricalcola subito su quell’ora. Se lasci vuoto, usa l’orario attuale. Con data + da/a vedi anche la media della finestra e il dettaglio ora per ora più in basso.</p>
+      </div>
+
+      <div class="filter-row">
+        <div class="field">
+          <label>Data</label>
+          <input type="date" id="filterDate" class="mono">
+        </div>
+        <div class="field">
+          <label>Orario (plancia)</label>
+          <input type="time" id="filterFrom" class="mono">
+        </div>
+        <div class="field">
+          <label>Fino a (finestra, opzionale)</label>
+          <input type="time" id="filterTo" class="mono">
+        </div>
+        <button class="btn-outline" id="clearFilterBtn">Ora attuale</button>
+      </div>
+    </div>
+
     <div class="plancia" id="plancia">
       <div class="plancia-head">
         <h2 id="plancia-title">Plancia</h2>
         <div class="updated mono" id="updatedAt"></div>
       </div>
       <div class="gauges" id="gauges">
-        <div class="plancia-empty">Aggiungi o seleziona un punto per vedere vento, mare, pressione e luna in tempo reale.</div>
+        <div class="plancia-empty">Aggiungi o seleziona un punto, poi imposta l’orario sopra se vuoi i dati di un momento preciso.</div>
       </div>
     </div>
 
@@ -411,42 +467,8 @@
         <div class="plancia-empty">Calcolati localmente da SunCalc, nessuna chiamata di rete necessaria.</div>
       </div>
     </div>
-  </section>
 
-  <section id="mappa" class="wrap alt">
-    <div class="section-head">
-      <div class="eyebrow">Carta nautica</div>
-      <h2>La tua mappa</h2>
-      <p>Vuota finché non la riempi tu. Attiva "Aggiungi dalla mappa" qui sopra e clicca ovunque per segnare un nuovo punto, oppure tocca un punto già presente per caricarne i dati. In alto a destra puoi accendere i livelli di batimetria (EMODnet in Europa, GEBCO a copertura globale) e la segnaletica nautica di OpenSeaMap.</p>
-    </div>
-    <div id="map"></div>
-    <div class="map-note">© OpenStreetMap contributors · geocoding e dati meteomarini © Open-Meteo.com — nessuna chiave API richiesta</div>
-  </section>
-
-  <section id="meteo" class="wrap">
-    <div class="section-head">
-      <div class="eyebrow">Previsioni personalizzabili</div>
-      <h2>Vento, mare e pressione</h2>
-      <p>Nessuna data: vedi la panoramica dei prossimi 7 giorni con le medie nelle finestre migliori (alba e tramonto). Solo data: vedi l'andamento ora per ora di quel giorno. Data + orario: vedi la media della finestra scelta più il dettaglio orario.</p>
-    </div>
-
-    <div class="filter-row">
-      <div class="field">
-        <label>Data (opzionale)</label>
-        <input type="date" id="filterDate" class="mono">
-      </div>
-      <div class="field">
-        <label>Da (opzionale)</label>
-        <input type="time" id="filterFrom" class="mono">
-      </div>
-      <div class="field">
-        <label>A (opzionale)</label>
-        <input type="time" id="filterTo" class="mono">
-      </div>
-      <button class="btn-outline" id="clearFilterBtn">Azzera filtro</button>
-    </div>
-
-    <div id="forecastContainer">
+    <div id="forecastContainer" style="margin-top:28px;">
       <div class="fc-scroll">
         <table class="fc" id="fcTable">
           <thead><tr id="fcHead"></tr></thead>
@@ -456,6 +478,23 @@
         </table>
       </div>
     </div>
+  </section>
+
+  <section id="mappa" class="wrap alt">
+    <div class="section-head">
+      <div class="eyebrow">Carta nautica</div>
+      <h2>La tua mappa</h2>
+      <p>Clicca sulla carta per leggere la profondità del fondo. Trascina un punto per spostarlo, oppure aprilo e modifica nome, tipo e note. In alto a destra puoi accendere i livelli di batimetria e la segnaletica nautica di OpenSeaMap.</p>
+    </div>
+    <div id="mapWrap">
+      <div class="map-toolbar">
+        <button class="btn-outline" id="fullscreenBtn" type="button">Schermo intero</button>
+        <span class="hint-inline">Clic = profondità · trascina = sposta lo spot · “Aggiungi dalla mappa” per un nuovo punto</span>
+      </div>
+      <div id="map"></div>
+      <div class="depth-readout" id="depthReadout" hidden></div>
+    </div>
+    <div class="map-note">© OpenStreetMap contributors · geocoding e dati meteomarini © Open-Meteo.com — nessuna chiave API richiesta</div>
   </section>
 
   <section id="tecniche" class="alt">
@@ -484,7 +523,7 @@
 </main>
 
 <footer class="wrap">
-  Progetto indipendente senza fini di lucro. Meteo, mare e geocoding: <a href="https://open-meteo.com" target="_blank">Open-Meteo.com</a> (API gratuita, licenza CC-BY 4.0). Mappa: <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>. Batimetria: <a href="https://emodnet.ec.europa.eu/en/bathymetry" target="_blank">EMODnet Bathymetry</a> e <a href="https://www.gebco.net" target="_blank">GEBCO</a>. Segnaletica nautica: <a href="https://www.openseamap.org" target="_blank">OpenSeaMap</a>. Sole e luna: calcolati localmente con <a href="https://github.com/mourner/suncalc" target="_blank">SunCalc</a>. I tuoi punti sono salvati nella memoria locale di questo browser (localStorage): restano anche chiudendo la pagina, ma solo su questo dispositivo e non vengono inviati da nessuna parte. Rispetta sempre le misure minime, i periodi di fermo biologico e i regolamenti locali prima di pescare.
+  Progetto indipendente senza fini di lucro. Meteo, mare e geocoding: <a href="https://open-meteo.com" target="_blank">Open-Meteo.com</a> (API gratuita, licenza CC-BY 4.0). Mappa: <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>. Batimetria (livelli e click sul fondo): <a href="https://emodnet.ec.europa.eu/en/bathymetry" target="_blank">EMODnet Bathymetry</a>, <a href="https://www.gebco.net" target="_blank">GEBCO</a> e <a href="https://www.opentopodata.org/" target="_blank">OpenTopoData</a>. Segnaletica nautica: <a href="https://www.openseamap.org" target="_blank">OpenSeaMap</a>. Sole e luna: calcolati localmente con <a href="https://github.com/mourner/suncalc" target="_blank">SunCalc</a>. I tuoi punti sono salvati nella memoria locale di questo browser (localStorage): restano anche chiudendo la pagina, ma solo su questo dispositivo e non vengono inviati da nessuna parte. Rispetta sempre le misure minime, i periodi di fermo biologico e i regolamenti locali prima di pescare.
 </footer>
 
 <script>
@@ -496,6 +535,7 @@ let currentSpot = null;
 let mapAddMode = false;
 let pendingCoords = null;
 let lastWeather = null, lastMarine = null;
+let editingSpotId = null;
 const STORAGE_KEY = "lenza_spots_v1";
 
 function loadSpotsFromStorage(){
@@ -562,6 +602,44 @@ function moonLabel(phase){
   if(phase < 0.78) return "Ultimo quarto";
   return "Calante";
 }
+function localYmd(date){
+  const y = date.getFullYear();
+  const m = String(date.getMonth()+1).padStart(2,'0');
+  const d = String(date.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+function getReferenceDate(){
+  const dateVal = document.getElementById('filterDate').value;
+  const fromVal = document.getElementById('filterFrom').value;
+  const now = new Date();
+  const day = dateVal || localYmd(now);
+  if(fromVal) return new Date(`${day}T${fromVal}`);
+  if(dateVal){
+    if(dateVal === localYmd(now)) return now;
+    return new Date(`${dateVal}T12:00:00`);
+  }
+  return now;
+}
+function closestHourIndex(hourly, refDate){
+  let idx = 0, minDiff = Infinity;
+  hourly.time.forEach((t,i)=>{
+    const diff = Math.abs(new Date(t) - refDate);
+    if(diff < minDiff){ minDiff = diff; idx = i; }
+  });
+  return idx;
+}
+function formatRefLabel(refDate, usedNow){
+  const when = refDate.toLocaleString('it-IT',{weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+  return usedNow ? "ora attuale · " + when : "dati alle " + when;
+}
+function refreshFromFilters(){
+  if(currentSpot && lastWeather){
+    renderDashboard(currentSpot, lastWeather, lastMarine);
+    renderExtra(currentSpot, lastWeather, lastMarine);
+    renderSunMoon(currentSpot);
+    renderForecastSection(currentSpot, lastWeather, lastMarine);
+  }
+}
 
 /* ---------------------------------------------------------
    GEOCODING (Open-Meteo Geocoding API, gratuita)
@@ -606,29 +684,79 @@ document.getElementById('searchInput').addEventListener('keydown', e=>{
 /* ---------------------------------------------------------
    FORM AGGIUNTA PUNTO
 --------------------------------------------------------- */
+function closeSpotForm(){
+  editingSpotId = null;
+  document.getElementById('addForm').classList.remove('visible');
+  document.getElementById('confirmAdd').textContent = "Salva punto";
+}
 function openAddForm(lat, lon, suggestedName){
+  editingSpotId = null;
   document.getElementById('addForm').classList.add('visible');
+  document.getElementById('confirmAdd').textContent = "Salva punto";
   document.getElementById('newLat').value = lat.toFixed(4);
   document.getElementById('newLon').value = lon.toFixed(4);
   document.getElementById('newName').value = suggestedName || "";
+  document.getElementById('newNotes').value = "";
+  document.getElementById('newType').value = "spiaggia";
   document.getElementById('newName').focus();
+  document.getElementById('addForm').scrollIntoView({behavior:'smooth', block:'nearest'});
 }
-document.getElementById('cancelAdd').addEventListener('click', ()=>{
-  document.getElementById('addForm').classList.remove('visible');
-});
+function openEditForm(id){
+  const spot = SPOTS.find(s=>s.id===id);
+  if(!spot) return;
+  editingSpotId = id;
+  document.getElementById('addForm').classList.add('visible');
+  document.getElementById('confirmAdd').textContent = "Salva modifiche";
+  document.getElementById('newLat').value = Number(spot.lat).toFixed(4);
+  document.getElementById('newLon').value = Number(spot.lon).toFixed(4);
+  document.getElementById('newName').value = spot.name || "";
+  document.getElementById('newType').value = TYPE_LABEL[spot.type] ? spot.type : "altro";
+  document.getElementById('newNotes').value = spot.notes || "";
+  document.getElementById('newName').focus();
+  document.getElementById('addForm').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+function applySpotCoords(spot, lat, lon){
+  spot.lat = lat;
+  spot.lon = lon;
+  if(markers[spot.id]) markers[spot.id].setLatLng([lat, lon]);
+}
+document.getElementById('cancelAdd').addEventListener('click', closeSpotForm);
 document.getElementById('confirmAdd').addEventListener('click', ()=>{
   const name = document.getElementById('newName').value.trim();
   const lat = parseFloat(document.getElementById('newLat').value);
   const lon = parseFloat(document.getElementById('newLon').value);
   const type = document.getElementById('newType').value;
+  const notes = document.getElementById('newNotes').value.trim();
   if(!name || isNaN(lat) || isNaN(lon)){
     alert("Inserisci un nome e coordinate valide.");
     return;
   }
-  const spot = {id:"s"+Date.now(), name, lat, lon, type};
+  if(editingSpotId){
+    const spot = SPOTS.find(s=>s.id===editingSpotId);
+    if(!spot) return;
+    const moved = Math.abs(spot.lat - lat) > 0.00005 || Math.abs(spot.lon - lon) > 0.00005;
+    spot.name = name;
+    spot.type = type;
+    spot.notes = notes;
+    applySpotCoords(spot, lat, lon);
+    if(markers[spot.id] && markers[spot.id].getTooltip){
+      markers[spot.id].unbindTooltip();
+      markers[spot.id].bindTooltip(spot.name, {direction:"top"});
+    }
+    saveSpotsToStorage();
+    closeSpotForm();
+    renderChips();
+    if(currentSpot && currentSpot.id===spot.id){
+      currentSpot = spot;
+      renderSpotInfo(spot);
+      if(moved) fetchAll(spot);
+    }
+    return;
+  }
+  const spot = {id:"s"+Date.now(), name, lat, lon, type, notes};
   SPOTS.push(spot);
   saveSpotsToStorage();
-  document.getElementById('addForm').classList.remove('visible');
+  closeSpotForm();
   renderChips();
   addMarker(spot);
   selectSpot(spot.id);
@@ -670,13 +798,20 @@ function renderChips(){
   box.innerHTML = SPOTS.map(s=>`
     <div class="chip ${currentSpot && currentSpot.id===s.id ? 'selected':''}" data-id="${s.id}">
       <span>${s.name}</span>
+      <button type="button" class="ed" data-ed="${s.id}" title="Modifica">✎</button>
       <span class="rm" data-rm="${s.id}">×</span>
     </div>
   `).join('');
   box.querySelectorAll('.chip').forEach(chip=>{
     chip.addEventListener('click', e=>{
-      if(e.target.dataset.rm) return;
+      if(e.target.dataset.rm || e.target.dataset.ed) return;
       selectSpot(chip.dataset.id);
+    });
+  });
+  box.querySelectorAll('.ed').forEach(ed=>{
+    ed.addEventListener('click', e=>{
+      e.stopPropagation();
+      openEditForm(ed.dataset.ed);
     });
   });
   box.querySelectorAll('.rm').forEach(rm=>{
@@ -693,17 +828,23 @@ function renderDashTable(){
     <tr class="dash-row ${currentSpot && currentSpot.id===s.id ? 'selected':''}" data-id="${s.id}">
       <td>${s.name}</td>
       <td>${TYPE_LABEL[s.type] || 'Altro'}</td>
-      <td class="mono">${s.lat.toFixed(3)}, ${s.lon.toFixed(3)}</td>
+      <td class="mono">${Number(s.lat).toFixed(3)}, ${Number(s.lon).toFixed(3)}</td>
       <td id="score-am-${s.id}"><span class="score-pill low">da calcolare</span></td>
       <td id="score-pm-${s.id}"><span class="score-pill low">da calcolare</span></td>
-      <td><span class="rm" data-rm="${s.id}">×</span></td>
+      <td>
+        <button type="button" class="btn-outline" data-ed="${s.id}" style="padding:6px 10px; font-size:0.64rem;">Modifica</button>
+        <span class="rm" data-rm="${s.id}">×</span>
+      </td>
     </tr>
   `).join('');
   body.querySelectorAll('.dash-row').forEach(row=>{
     row.addEventListener('click', e=>{
-      if(e.target.dataset.rm) return;
+      if(e.target.dataset.rm || e.target.dataset.ed) return;
       selectSpot(row.dataset.id);
     });
+  });
+  body.querySelectorAll('[data-ed]').forEach(ed=>{
+    ed.addEventListener('click', e=>{ e.stopPropagation(); openEditForm(ed.dataset.ed); });
   });
   body.querySelectorAll('.rm').forEach(rm=>{
     rm.addEventListener('click', e=>{ e.stopPropagation(); removeSpot(rm.dataset.rm); });
@@ -731,6 +872,8 @@ function selectSpot(id){
   if(map) map.flyTo([spot.lat, spot.lon], Math.max(map.getZoom(),9), {duration:0.8});
   fetchAll(spot);
   renderSpotInfo(spot);
+  const mapSection = document.getElementById('mappa');
+  if(mapSection) mapSection.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 /* ---------------------------------------------------------
@@ -767,7 +910,6 @@ async function fetchAll(spot){
     renderDashboard(spot, weather, marine);
     renderExtra(spot, weather, marine);
     renderForecastSection(spot, weather, marine);
-    document.getElementById('updatedAt').textContent = "aggiornato " + new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
   }catch(err){
     document.getElementById('gauges').innerHTML = '<div class="loading" style="padding:22px;">Dati non disponibili al momento: ' + (err.message || err) + '</div>';
     document.getElementById('extraGauges').innerHTML = '<div class="loading" style="padding:22px;">Dati non disponibili al momento.</div>';
@@ -777,12 +919,9 @@ async function fetchAll(spot){
 
 function renderDashboard(spot, weather, marine){
   const h = weather.hourly;
-  const now = new Date();
-  let idx = 0, minDiff = Infinity;
-  h.time.forEach((t,i)=>{
-    const diff = Math.abs(new Date(t) - now);
-    if(diff < minDiff){ minDiff = diff; idx = i; }
-  });
+  const ref = getReferenceDate();
+  const usedNow = !document.getElementById('filterDate').value && !document.getElementById('filterFrom').value;
+  const idx = closestHourIndex(h, ref);
   const idx24 = Math.max(0, idx-24);
 
   const temp = h.temperature_2m[idx];
@@ -799,8 +938,7 @@ function renderDashboard(spot, weather, marine){
     const mh = marine.hourly;
     let midx = mh.time ? mh.time.findIndex(t => t === h.time[idx]) : -1;
     if(midx < 0 && mh.time){
-      let minD2 = Infinity;
-      mh.time.forEach((t,i)=>{ const d = Math.abs(new Date(t)-now); if(d<minD2){minD2=d; midx=i;} });
+      midx = closestHourIndex(mh, ref);
     }
     if(midx >= 0){
       wave = mh.wave_height ? mh.wave_height[midx] : null;
@@ -809,7 +947,7 @@ function renderDashboard(spot, weather, marine){
     }
   }
 
-  const phase = moonPhase(now);
+  const phase = moonPhase(ref);
   const illumination = Math.round((1 - Math.cos(phase * 2 * Math.PI)) / 2 * 100);
 
   let score = 100;
@@ -863,20 +1001,17 @@ function renderDashboard(spot, weather, marine){
       <div class="gauge-label">Indice condizioni di pesca (euristico)</div>
       <div class="gauge-value">${scoreLabel}</div>
       <div class="score-bar"><div class="fill" style="width:${score}%"></div></div>
-      <div class="gauge-sub">Basato su vento, onda, trend barico e fase lunare — non sostituisce il buon senso in mare.</div>
+      <div class="gauge-sub">Basato su vento, onda, trend barico e fase lunare all'orario scelto — non sostituisce il buon senso in mare.</div>
     </div>
   `;
+  document.getElementById('updatedAt').textContent = formatRefLabel(ref, usedNow);
 }
 
 /* Pannello dati aggiuntivi: umidità, rugiada, UV, visibilità, onda di vento/mare lungo, corrente */
 function renderExtra(spot, weather, marine){
   const h = weather.hourly;
-  const now = new Date();
-  let idx = 0, minDiff = Infinity;
-  h.time.forEach((t,i)=>{
-    const diff = Math.abs(new Date(t) - now);
-    if(diff < minDiff){ minDiff = diff; idx = i; }
-  });
+  const ref = getReferenceDate();
+  const idx = closestHourIndex(h, ref);
 
   const humidity = h.relative_humidity_2m ? h.relative_humidity_2m[idx] : null;
   const dew = h.dew_point_2m ? h.dew_point_2m[idx] : null;
@@ -889,8 +1024,7 @@ function renderExtra(spot, weather, marine){
     const mh = marine.hourly;
     let midx = mh.time ? mh.time.findIndex(t => t === h.time[idx]) : -1;
     if(midx < 0 && mh.time){
-      let minD2 = Infinity;
-      mh.time.forEach((t,i)=>{ const d = Math.abs(new Date(t)-now); if(d<minD2){minD2=d; midx=i;} });
+      midx = closestHourIndex(mh, ref);
     }
     if(midx >= 0){
       windWave = mh.wind_wave_height ? mh.wind_wave_height[midx] : null;
@@ -946,7 +1080,7 @@ function renderSunMoon(spot){
     document.getElementById('sunMoonGauges').innerHTML = '<div class="plancia-empty">Libreria astronomica non disponibile al momento.</div>';
     return;
   }
-  const now = new Date();
+  const now = getReferenceDate();
   const sunTimes = SunCalc.getTimes(now, spot.lat, spot.lon);
   const moonTimes = SunCalc.getMoonTimes(now, spot.lat, spot.lon, true);
   const moonIllum = SunCalc.getMoonIllumination(now);
@@ -989,7 +1123,7 @@ function renderSunMoon(spot){
       <div class="gauge-sub">Minor: ${minorWindows.join(' · ') || '—'} — attività di alimentazione spesso più intensa in queste fasce, soprattutto se coincidono con alba o tramonto.</div>
     </div>
   `;
-  document.getElementById('sunMoonUpdated').textContent = "calcolato per oggi, " + now.toLocaleDateString('it-IT');
+  document.getElementById('sunMoonUpdated').textContent = "calcolato per " + now.toLocaleDateString('it-IT');
 }
 
 function fcRowHeaderHtml(cols){
@@ -1013,7 +1147,7 @@ function marineValueNear(marine, key, time){
 }
 
 function renderForecastSection(spot, weather, marine){
-  const dateVal = document.getElementById('filterDate').value;
+  let dateVal = document.getElementById('filterDate').value;
   const fromVal = document.getElementById('filterFrom').value;
   const toVal = document.getElementById('filterTo').value;
   const container = document.getElementById('forecastContainer');
@@ -1022,6 +1156,8 @@ function renderForecastSection(spot, weather, marine){
   // rimuove eventuale riepilogo finestra precedente
   const oldSummary = document.getElementById('windowSummary');
   if(oldSummary) oldSummary.remove();
+
+  if(!dateVal && fromVal) dateVal = localYmd(new Date());
 
   if(!dateVal){
     renderOutlook7(spot, weather, marine);
@@ -1051,6 +1187,8 @@ function renderForecastSection(spot, weather, marine){
     const avgGust = avg(h.wind_gusts_10m);
     const avgTemp = avg(h.temperature_2m);
     const avgPrecipProb = avg(h.precipitation_probability);
+    const avgUv = h.uv_index ? avg(h.uv_index) : null;
+    const avgHumidity = h.relative_humidity_2m ? avg(h.relative_humidity_2m) : null;
     let avgWave = null, avgCurrent = null;
     if(marine && marine.hourly){
       const waveArr = indices.map(i=>marineValueNear(marine,'wave_height', h.time[i])).filter(v=>v!=null);
@@ -1066,6 +1204,8 @@ function renderForecastSection(spot, weather, marine){
         <div class="cell"><div class="l">Prob. pioggia</div><div class="v">${avgPrecipProb!==null?Math.round(avgPrecipProb)+'%':'—'}</div></div>
         <div class="cell"><div class="l">Onda media</div><div class="v">${avgWave!==null?avgWave.toFixed(1)+' m':'—'}</div></div>
         <div class="cell"><div class="l">Corrente media</div><div class="v">${avgCurrent!==null?avgCurrent.toFixed(1)+' km/h':'—'}</div></div>
+        <div class="cell"><div class="l">UV medio</div><div class="v">${avgUv!==null?avgUv.toFixed(1):'—'}</div></div>
+        <div class="cell"><div class="l">Umidità media</div><div class="v">${avgHumidity!==null?Math.round(avgHumidity)+'%':'—'}</div></div>
       </div>
     `;
     container.insertAdjacentHTML('afterbegin', summaryHtml);
@@ -1094,7 +1234,7 @@ function renderForecastSection(spot, weather, marine){
 function renderOutlook7(spot, weather, marine){
   const d = weather.daily;
   const h = weather.hourly;
-  document.getElementById('fcHead').innerHTML = fcRowHeaderHtml(["Giorno","Meteo","Temp","UV max","Finestra mattina (vento/onda)","Finestra sera (vento/onda)"]);
+  document.getElementById('fcHead').innerHTML = fcRowHeaderHtml(["Giorno","Meteo","Temp","UV max","Finestra mattina (vento/onda)","Finestra sera (vento/onda)","Dettaglio"]);
 
   const avgInWindow = (arr, fromT, toT) => {
     const vals = [];
@@ -1128,26 +1268,62 @@ function renderOutlook7(spot, weather, marine){
     if(hIdx < 0) hIdx = h.time.findIndex(t => t.startsWith(dayStr));
     const code = h.weather_code ? h.weather_code[hIdx] : d.weather_code[i];
 
-    rows += `<tr>
-      <td>${fmtDay(dayStr)}</td>
+    rows += `<tr class="day-row" data-day="${dayStr}"
+        data-am-from="${fmtTime(amFrom)}" data-am-to="${fmtTime(amTo)}"
+        data-pm-from="${fmtTime(pmFrom)}" data-pm-to="${fmtTime(pmTo)}">
+      <td class="day-cell" style="cursor:pointer;">${fmtDay(dayStr)}</td>
       <td>${WMO[code] || '—'}</td>
       <td class="mono">${Math.round(d.temperature_2m_min[i])}° / ${Math.round(d.temperature_2m_max[i])}°</td>
       <td class="mono">${d.uv_index_max ? d.uv_index_max[i].toFixed(1) : '—'}</td>
       <td class="mono">${amWind!==null?Math.round(amWind)+' km/h':'—'}${amWave!==null?' · onda '+amWave.toFixed(1)+'m':''}</td>
       <td class="mono">${pmWind!==null?Math.round(pmWind)+' km/h':'—'}${pmWave!==null?' · onda '+pmWave.toFixed(1)+'m':''}</td>
+      <td>
+        <button class="btn-outline day-btn-full" style="padding:6px 10px; font-size:0.64rem;">Ora per ora</button>
+        <button class="btn-outline day-btn-am" style="padding:6px 10px; font-size:0.64rem;">Mattina</button>
+        <button class="btn-outline day-btn-pm" style="padding:6px 10px; font-size:0.64rem;">Sera</button>
+      </td>
     </tr>`;
   }
   document.getElementById('fcBody').innerHTML = rows;
+
+  document.querySelectorAll('.day-cell, .day-btn-full').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const row = el.closest('.day-row');
+      applyDayFilter(row.dataset.day, '', '');
+    });
+  });
+  document.querySelectorAll('.day-btn-am').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const row = el.closest('.day-row');
+      applyDayFilter(row.dataset.day, row.dataset.amFrom, row.dataset.amTo);
+    });
+  });
+  document.querySelectorAll('.day-btn-pm').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const row = el.closest('.day-row');
+      applyDayFilter(row.dataset.day, row.dataset.pmFrom, row.dataset.pmTo);
+    });
+  });
 }
 
-document.getElementById('filterDate').addEventListener('change', ()=>{ if(currentSpot && lastWeather) renderForecastSection(currentSpot, lastWeather, lastMarine); });
-document.getElementById('filterFrom').addEventListener('change', ()=>{ if(currentSpot && lastWeather) renderForecastSection(currentSpot, lastWeather, lastMarine); });
-document.getElementById('filterTo').addEventListener('change', ()=>{ if(currentSpot && lastWeather) renderForecastSection(currentSpot, lastWeather, lastMarine); });
+function applyDayFilter(dayStr, fromStr, toStr){
+  document.getElementById('filterDate').value = dayStr;
+  document.getElementById('filterFrom').value = fromStr;
+  document.getElementById('filterTo').value = toStr;
+  refreshFromFilters();
+  document.getElementById('meteo').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+['filterDate','filterFrom','filterTo'].forEach(id=>{
+  const el = document.getElementById(id);
+  el.addEventListener('change', refreshFromFilters);
+  el.addEventListener('input', refreshFromFilters);
+});
 document.getElementById('clearFilterBtn').addEventListener('click', ()=>{
   document.getElementById('filterDate').value = '';
   document.getElementById('filterFrom').value = '';
   document.getElementById('filterTo').value = '';
-  if(currentSpot && lastWeather) renderForecastSection(currentSpot, lastWeather, lastMarine);
+  refreshFromFilters();
 });
 
 /* ---------------------------------------------------------
@@ -1156,9 +1332,11 @@ document.getElementById('clearFilterBtn').addEventListener('click', ()=>{
 let map, markers = {};
 function initMap(){
   map = L.map('map', {scrollWheelZoom:false}).setView([46, 10], 4);
-  const base = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors',
+
+  const base = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
     maxZoom: 19,
+    subdomains: 'abcd',
     className: 'osm-base-tile'
   }).addTo(map);
 
@@ -1192,26 +1370,147 @@ function initMap(){
     "Boe e segnaletica nautica (OpenSeaMap)": seamarks
   }, {collapsed:false}).addTo(map);
 
-  map.on('click', e=>{
-    if(!mapAddMode) return;
-    openAddForm(e.latlng.lat, e.latlng.lng, "");
-    mapAddMode = false;
-    const toggle = document.getElementById('mapAddToggle');
-    toggle.classList.remove('active');
-    toggle.textContent = "Aggiungi dalla mappa";
+  map.on('click', async e=>{
+    if(mapAddMode){
+      openAddForm(e.latlng.lat, e.latlng.lng, "");
+      mapAddMode = false;
+      const toggle = document.getElementById('mapAddToggle');
+      toggle.classList.remove('active');
+      toggle.textContent = "Aggiungi dalla mappa";
+      return;
+    }
+    showDepthAt(e.latlng.lat, e.latlng.lng);
+  });
+
+  const fsBtn = document.getElementById('fullscreenBtn');
+  function mapIsFullscreen(){
+    const wrap = document.getElementById('mapWrap');
+    return document.fullscreenElement === wrap || wrap.classList.contains('is-fullscreen');
+  }
+  function syncMapFullscreen(){
+    const on = mapIsFullscreen();
+    fsBtn.textContent = on ? "Esci da schermo intero" : "Schermo intero";
+    if(on) map.scrollWheelZoom.enable();
+    else map.scrollWheelZoom.disable();
+    setTimeout(()=> map.invalidateSize(), 120);
+  }
+  fsBtn.addEventListener('click', async ()=>{
+    const wrap = document.getElementById('mapWrap');
+    try{
+      if(document.fullscreenElement){
+        await document.exitFullscreen();
+      }else if(wrap.requestFullscreen){
+        await wrap.requestFullscreen();
+      }else{
+        wrap.classList.toggle('is-fullscreen');
+      }
+    }catch(err){
+      wrap.classList.toggle('is-fullscreen');
+    }
+    syncMapFullscreen();
+  });
+  document.addEventListener('fullscreenchange', ()=>{
+    if(!document.fullscreenElement) document.getElementById('mapWrap').classList.remove('is-fullscreen');
+    syncMapFullscreen();
+  });
+  document.addEventListener('keydown', e=>{
+    if(e.key !== 'Escape') return;
+    const wrap = document.getElementById('mapWrap');
+    if(wrap.classList.contains('is-fullscreen') && !document.fullscreenElement){
+      wrap.classList.remove('is-fullscreen');
+      syncMapFullscreen();
+    }
   });
 }
+function pickNumericDepth(obj, depth){
+  if(obj==null || depth>6) return null;
+  if(typeof obj === 'number' && isFinite(obj)) return obj;
+  if(typeof obj === 'string' && obj.trim()!=='' && isFinite(+obj)) return +obj;
+  if(Array.isArray(obj)){
+    for(const item of obj){
+      const v = pickNumericDepth(item, depth+1);
+      if(v!=null) return v;
+    }
+    return null;
+  }
+  if(typeof obj === 'object'){
+    const preferred = ['avg_depth','depth','elevation','z','value'];
+    for(const k of preferred){
+      if(k in obj){
+        const v = pickNumericDepth(obj[k], depth+1);
+        if(v!=null) return v;
+      }
+    }
+    for(const k of Object.keys(obj)){
+      const v = pickNumericDepth(obj[k], depth+1);
+      if(v!=null) return v;
+    }
+  }
+  return null;
+}
+async function fetchDepth(lat, lon){
+  const sources = [
+    {name:'EMODnet', url:`https://rest.emodnet-bathymetry.eu/depth_sample?geom=POINT(${lon} ${lat})`},
+    {name:'GEBCO', url:`https://api.opentopodata.org/v1/gebco2020?locations=${lat},${lon}`}
+  ];
+  for(const src of sources){
+    try{
+      const res = await fetch(src.url);
+      if(!res.ok) continue;
+      const data = await res.json();
+      const z = pickNumericDepth(data, 0);
+      if(z!=null) return {z, source: src.name};
+    }catch(err){}
+  }
+  return null;
+}
+function describeDepth(z){
+  if(z < -0.5) return {title: Math.abs(z).toFixed(1)+' m', sub:'profondità del fondo marino'};
+  if(z > 0.5) return {title: z.toFixed(1)+' m s.l.m.', sub:'terra emersa (quota, non fondale)'};
+  return {title:'circa 0 m', sub:'livello del mare o battigia'};
+}
+async function showDepthAt(lat, lon){
+  const readout = document.getElementById('depthReadout');
+  readout.hidden = false;
+  readout.innerHTML = `<strong>Profondità…</strong><div class="gauge-sub">${lat.toFixed(4)}, ${lon.toFixed(4)}</div>`;
+  const result = await fetchDepth(lat, lon);
+  if(!result){
+    readout.innerHTML = `<strong>Profondità non disponibile</strong><div class="gauge-sub">${lat.toFixed(4)}, ${lon.toFixed(4)} · prova a zoomare in mare aperto</div>`;
+    return;
+  }
+  const d = describeDepth(result.z);
+  readout.innerHTML = `<strong>Fondo: ${d.title}</strong><div class="gauge-sub">${d.sub} · ${result.source} · ${lat.toFixed(4)}, ${lon.toFixed(4)}</div>`;
+}
 function addMarker(spot){
-  const marker = L.circleMarker([spot.lat, spot.lon], {
-    radius:7, color:"#d9622b", weight:2, fillColor:"#d9622b", fillOpacity:0.55
-  }).addTo(map);
+  const icon = L.divIcon({
+    className: 'spot-marker' + (currentSpot && currentSpot.id===spot.id ? ' selected' : ''),
+    html: '<span></span>',
+    iconSize: [18,18],
+    iconAnchor: [9,9]
+  });
+  const marker = L.marker([spot.lat, spot.lon], {icon, draggable:true}).addTo(map);
   marker.bindTooltip(spot.name, {direction:"top"});
   marker.on('click', ()=> selectSpot(spot.id));
+  marker.on('dragend', ()=>{
+    const ll = marker.getLatLng();
+    const s = SPOTS.find(x=>x.id===spot.id);
+    if(!s) return;
+    s.lat = +ll.lat.toFixed(5);
+    s.lon = +ll.lng.toFixed(5);
+    saveSpotsToStorage();
+    renderChips();
+    if(currentSpot && currentSpot.id===s.id){
+      currentSpot = s;
+      renderSpotInfo(s);
+      fetchAll(s);
+    }
+  });
   markers[spot.id] = marker;
 }
 function highlightMarker(id){
   Object.entries(markers).forEach(([sid,m])=>{
-    m.setStyle(sid === id ? {radius:10, fillOpacity:0.95} : {radius:7, fillOpacity:0.55});
+    const el = m.getElement();
+    if(el) el.classList.toggle('selected', sid === id);
   });
 }
 
@@ -1221,11 +1520,20 @@ function highlightMarker(id){
 function renderSpotInfo(spot){
   const el = document.getElementById('spotInfo');
   el.classList.add('visible');
+  const notes = (spot.notes || '').trim();
   el.innerHTML = `
     <h3>${spot.name}</h3>
-    <div class="badges"><span class="badge">${TYPE_LABEL[spot.type] || 'Altro'}</span><span class="badge">${spot.lat.toFixed(3)}, ${spot.lon.toFixed(3)}</span></div>
+    <div class="badges">
+      <span class="badge">${TYPE_LABEL[spot.type] || 'Altro'}</span>
+      <span class="badge">${Number(spot.lat).toFixed(3)}, ${Number(spot.lon).toFixed(3)}</span>
+    </div>
+    ${notes ? `<p style="margin-top:12px; color:rgba(245,241,230,0.78); font-size:0.9rem;">${notes.replace(/</g,'')}</p>` : ''}
     <ul>${(TYPE_TIPS[spot.type] || TYPE_TIPS.altro).map(t=>`<li>${t}</li>`).join('')}</ul>
+    <div class="spot-actions">
+      <button type="button" class="btn" id="editSpotBtn">Modifica spot</button>
+    </div>
   `;
+  document.getElementById('editSpotBtn').addEventListener('click', ()=> openEditForm(spot.id));
 }
 
 /* ---------------------------------------------------------
