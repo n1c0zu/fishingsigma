@@ -34,7 +34,20 @@
       radial-gradient(ellipse at 90% 10%, rgba(217,98,43,0.10), transparent 55%);
   }
   a{color:inherit;}
-  .wrap{max-width:1180px; margin:0 auto; padding:0 24px;}
+
+  /* ---------- APP LAYOUT (SIDEBAR + MAIN) ---------- */
+  .app-shell{
+    display:flex;
+    min-height:100vh;
+    position:relative;
+  }
+  .main-area{
+    flex:1;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+  }
+  .wrap{max-width:1100px; margin:0 auto; padding:0 24px; width:100%;}
   h1,h2,h3,.display{font-family:'Fraunces',serif;}
   .mono{font-family:'IBM Plex Mono',monospace;}
   .eyebrow{
@@ -47,135 +60,222 @@
   }
   .eyebrow::before{content:""; width:20px; height:1px; background:var(--rust);}
 
-  /* ---------- HEADER ---------- */
-  header{
-    position:sticky; top:0; z-index:50;
-    background:rgba(6,24,38,0.86);
-    backdrop-filter:blur(10px);
+  /* ---------- SIDEBAR SINISTRA ---------- */
+  .sidebar{
+    width:360px;
+    flex-shrink:0;
+    background:rgba(6,24,38,0.96);
+    border-right:1px solid var(--line-strong);
+    padding:24px 20px;
+    overflow-y:auto;
+    height:100vh;
+    position:sticky;
+    top:0;
+    z-index:90;
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+  }
+  .sidebar-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding-bottom:14px;
     border-bottom:1px solid var(--line);
   }
-  .navbar{display:flex; align-items:center; justify-content:space-between; padding:16px 24px; flex-wrap:wrap; gap:10px;}
-  .logo{font-family:'Fraunces',serif; font-weight:700; font-size:1.3rem; letter-spacing:0.02em;}
-  .logo span{color:var(--rust);}
-  nav ul{display:flex; gap:28px; list-style:none; flex-wrap:wrap; row-gap:6px;}
-  nav a{font-size:0.85rem; text-decoration:none; color:var(--foam); opacity:0.75; transition:opacity .2s;}
-  nav a:hover{opacity:1;}
-  @media(max-width:760px){
-    .navbar{padding:12px 16px;}
-    nav ul{gap:12px 16px; width:100%; justify-content:flex-start;}
-    nav a{font-size:0.72rem;}
+  .sidebar-title{
+    font-family:'Fraunces',serif;
+    font-size:1.15rem;
+    font-weight:600;
   }
-  @media(max-width:420px){ nav ul{gap:10px 14px;} nav a{font-size:0.68rem;} }
+  .close-sidebar-btn{
+    display:none;
+    background:none;
+    border:none;
+    color:var(--foam);
+    font-size:1.5rem;
+    cursor:pointer;
+    line-height:1;
+  }
+  .sidebar-backdrop{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.65);
+    backdrop-filter:blur(3px);
+    z-index:85;
+  }
 
-  /* ---------- HERO ---------- */
-  .hero{padding:64px 0 40px;}
-  .hero h1{font-size:clamp(2.1rem,5vw,3.4rem); font-weight:600; max-width:780px; line-height:1.05;}
-  .hero h1 em{font-style:italic; color:var(--sand);}
-  .hero p.lead{max-width:620px; margin-top:18px; color:rgba(245,241,230,0.72); font-size:1.05rem;}
-  @media(max-width:600px){
-    .hero{padding:40px 0 28px;}
-    .hero p.lead{font-size:0.95rem;}
+  @media(max-width:1024px){
+    .sidebar{
+      position:fixed;
+      left:0; top:0; bottom:0;
+      width:340px;
+      max-width:86vw;
+      transform:translateX(-100%);
+      transition:transform .3s ease;
+      z-index:100;
+      box-shadow:4px 0 24px rgba(0,0,0,0.6);
+    }
+    .sidebar.open{
+      transform:translateX(0);
+    }
+    .sidebar-backdrop.open{
+      display:block;
+    }
+    .close-sidebar-btn{
+      display:block;
+    }
   }
 
-  /* ---------- GESTIONE PUNTI ---------- */
-  .points-panel{
-    margin-top:36px; border:1px solid var(--line-strong); border-radius:4px;
-    background:rgba(13,44,62,0.35); padding:22px;
+  .sidebar-section-title{
+    font-size:0.92rem;
+    font-weight:600;
+    margin-bottom:6px;
   }
-  @media(max-width:600px){ .points-panel{padding:16px; margin-top:24px;} }
-  .points-panel h2{font-size:1.05rem; font-weight:600; margin-bottom:4px;}
-  .points-panel .hint{font-size:0.82rem; color:rgba(245,241,230,0.6); margin-bottom:16px;}
-  .search-row{display:flex; gap:10px; flex-wrap:wrap;}
+  .sidebar .hint{
+    font-size:0.78rem;
+    color:rgba(245,241,230,0.6);
+    margin-bottom:12px;
+  }
+  .sidebar-actions{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .sidebar .search-row{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
   input[type="text"], input[type="number"], input[type="date"], input[type="time"], textarea{
     background:var(--navy-mid); color:var(--foam); border:1px solid var(--line-strong);
-    padding:11px 14px; font-family:'Inter',sans-serif; font-size:0.88rem; border-radius:2px;
+    padding:10px 12px; font-family:'Inter',sans-serif; font-size:0.85rem; border-radius:2px;
+    width:100%;
   }
-  textarea{min-width:220px; min-height:64px; resize:vertical; font-family:'Inter',sans-serif;}
-  #searchInput{flex:1; min-width:220px;}
+  textarea{min-height:64px; resize:vertical;}
   .btn{
     background:var(--rust); color:var(--navy-deep); border:1px solid var(--rust);
-    padding:11px 18px; font-family:'IBM Plex Mono',monospace; font-size:0.76rem;
+    padding:10px 16px; font-family:'IBM Plex Mono',monospace; font-size:0.76rem;
     text-transform:uppercase; letter-spacing:.05em; cursor:pointer; border-radius:2px;
-    font-weight:600; transition:opacity .2s;
+    font-weight:600; transition:opacity .2s; text-align:center;
   }
   .btn:hover{opacity:0.85;}
   .btn-outline{
     background:transparent; border:1px solid var(--line-strong); color:var(--foam);
-    padding:11px 18px; font-family:'IBM Plex Mono',monospace; font-size:0.76rem;
+    padding:10px 16px; font-family:'IBM Plex Mono',monospace; font-size:0.76rem;
     text-transform:uppercase; letter-spacing:.05em; cursor:pointer; border-radius:2px;
-    transition:border-color .2s, color .2s;
+    transition:border-color .2s, color .2s, background .2s; text-align:center;
   }
   .btn-outline:hover{border-color:var(--rust); color:var(--rust);}
-  .btn-outline.active{border-color:var(--rust); color:var(--rust); background:rgba(217,98,43,0.1);}
-  @media(max-width:600px){
-    .search-row{flex-direction:column; align-items:stretch;}
-    #searchInput{min-width:0; font-size:16px;} /* 16px: evita lo zoom automatico di iOS sul focus */
-    .btn, .btn-outline{width:100%; padding:13px 16px; text-align:center;}
-  }
-  .search-results{margin-top:10px; display:flex; flex-direction:column; gap:6px;}
+  .btn-outline.active{border-color:var(--rust); color:var(--rust); background:rgba(217,98,43,0.18);}
+
+  .search-results{margin-top:4px; display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto;}
   .search-result{
     text-align:left; background:var(--navy-mid); border:1px solid var(--line);
-    padding:10px 14px; font-size:0.82rem; cursor:pointer; border-radius:2px;
+    padding:8px 12px; font-size:0.8rem; cursor:pointer; border-radius:2px;
   }
   .search-result:hover{border-color:var(--rust);}
-  .search-result .sub{color:rgba(245,241,230,0.5); font-size:0.72rem; margin-top:2px;}
+  .search-result .sub{color:rgba(245,241,230,0.5); font-size:0.7rem; margin-top:2px;}
 
   .add-form{
-    margin-top:16px; padding-top:16px; border-top:1px dashed var(--line-strong);
-    display:none; gap:12px; flex-wrap:wrap; align-items:flex-end;
+    margin-top:12px; padding:14px; border:1px dashed var(--line-strong);
+    background:rgba(13,44,62,0.4); border-radius:4px;
+    display:none; flex-direction:column; gap:10px;
   }
   .add-form.visible{display:flex;}
-  .field{display:flex; flex-direction:column; gap:5px;}
-  .field label{font-family:'IBM Plex Mono',monospace; font-size:0.64rem; text-transform:uppercase; letter-spacing:.08em; color:rgba(245,241,230,0.55);}
+  .field{display:flex; flex-direction:column; gap:4px;}
+  .field label{font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:.08em; color:rgba(245,241,230,0.55);}
   select.field-select{
     background:var(--navy-mid); color:var(--foam); border:1px solid var(--line-strong);
-    padding:10px 12px; font-family:'Inter',sans-serif; font-size:0.85rem; border-radius:2px;
-  }
-  .coord-input{width:110px;}
-  @media(max-width:600px){
-    .add-form{flex-direction:column; align-items:stretch; gap:14px;}
-    .add-form .field{width:100%;}
-    .add-form input, .add-form select, .add-form textarea{width:100%; font-size:16px;}
-    .coord-input{width:100%;}
-    .add-form .btn, .add-form .btn-outline{width:100%;}
+    padding:9px 12px; font-family:'Inter',sans-serif; font-size:0.85rem; border-radius:2px; width:100%;
   }
 
-  .spot-chips{margin-top:18px; display:flex; flex-wrap:wrap; gap:8px;}
+  .spot-chips{margin-top:8px; display:flex; flex-direction:column; gap:6px;}
   .chip{
-    display:flex; align-items:center; gap:8px;
-    border:1px solid var(--line-strong); border-radius:20px; padding:7px 8px 7px 14px;
-    font-size:0.8rem; cursor:pointer; transition:border-color .2s, background .2s;
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    border:1px solid var(--line-strong); border-radius:4px; padding:8px 10px;
+    font-size:0.82rem; cursor:pointer; transition:border-color .2s, background .2s;
+    background:rgba(13,44,62,0.25);
   }
   .chip:hover{border-color:var(--rust);}
-  .chip.selected{border-color:var(--rust); background:rgba(217,98,43,0.12);}
+  .chip.selected{border-color:var(--rust); background:rgba(217,98,43,0.18); font-weight:600;}
+  .chip-actions{display:flex; align-items:center; gap:6px;}
   .chip .rm, .chip .ed{
     width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center;
     background:rgba(245,241,230,0.08); font-size:0.72rem; line-height:1; border:none; color:inherit; cursor:pointer;
   }
   .chip .rm:hover{background:var(--rust); color:var(--navy-deep);}
   .chip .ed:hover{background:var(--sand); color:var(--navy-deep);}
-  .empty-note{font-size:0.85rem; color:rgba(245,241,230,0.45); margin-top:14px; font-family:'IBM Plex Mono',monospace;}
+  .empty-note{font-size:0.8rem; color:rgba(245,241,230,0.45); font-family:'IBM Plex Mono',monospace; margin-top:8px;}
 
-  .dash-wrap{margin-top:22px; padding-top:20px; border-top:1px dashed var(--line-strong);}
-  .dash-head{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;}
-  .dash-head h3{font-size:0.95rem; font-weight:600;}
+  /* Tabella sintetica sidebar */
+  .dash-wrap{margin-top:14px; padding-top:14px; border-top:1px dashed var(--line-strong);}
+  .dash-head{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;}
+  .dash-head h3{font-size:0.85rem; font-weight:600;}
   .dash-scroll{overflow-x:auto; border:1px solid var(--line-strong); border-radius:4px;}
-  table.dash-table{border-collapse:collapse; width:100%; min-width:560px;}
-  table.dash-table th, table.dash-table td{padding:10px 12px; text-align:left; font-size:0.8rem; border-bottom:1px solid var(--line); white-space:nowrap;}
-  table.dash-table th{font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.05em; font-size:0.62rem; color:var(--rust); background:rgba(6,24,38,0.5);}
+  table.dash-table{border-collapse:collapse; width:100%;}
+  table.dash-table th, table.dash-table td{padding:7px 8px; text-align:left; font-size:0.74rem; border-bottom:1px solid var(--line); white-space:nowrap;}
+  table.dash-table th{font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.05em; font-size:0.6rem; color:var(--rust); background:rgba(6,24,38,0.5);}
   table.dash-table tr.dash-row{cursor:pointer;}
   table.dash-table tr.dash-row:hover{background:rgba(245,241,230,0.04);}
-  table.dash-table tr.dash-row.selected{background:rgba(217,98,43,0.1);}
-  .score-pill{font-family:'IBM Plex Mono',monospace; font-size:0.72rem; padding:3px 9px; border-radius:20px; border:1px solid var(--line-strong); display:inline-block;}
-  .score-pill.good{border-color:var(--seaweed); color:#9fd39a;}
-  .score-pill.mid{border-color:var(--rust); color:#f0a878;}
-  .score-pill.low{border-color:rgba(245,241,230,0.3); color:rgba(245,241,230,0.5);}
-  .dash-hint{margin-top:10px; font-size:0.74rem; color:rgba(245,241,230,0.45); font-family:'IBM Plex Mono',monospace;}
-  @media(max-width:600px){ .dash-head{flex-direction:column; align-items:stretch;} .dash-head .btn-outline{width:100%;} }
+  table.dash-table tr.dash-row.selected{background:rgba(217,98,43,0.12);}
+  .score-pill{font-family:'IBM Plex Mono',monospace; font-size:0.68rem; padding:2px 7px; border-radius:12px; border:1px solid var(--line-strong); display:inline-block; font-weight:500;}
+  .score-pill.good{border-color:var(--seaweed); color:#9fd39a; background:rgba(90,125,84,0.15);}
+  .score-pill.mid{border-color:var(--rust); color:#f0a878; background:rgba(217,98,43,0.12);}
+  .score-pill.low{border-color:rgba(245,241,230,0.3); color:rgba(245,241,230,0.55);}
+  .dash-hint{margin-top:8px; font-size:0.68rem; color:rgba(245,241,230,0.45); font-family:'IBM Plex Mono',monospace; line-height:1.35;}
 
-  /* ---------- PLANCIA / DASHBOARD ---------- */
+  /* ---------- HEADER PRINCIPALE ---------- */
+  header{
+    position:sticky; top:0; z-index:50;
+    background:rgba(6,24,38,0.9);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .navbar{display:flex; align-items:center; justify-content:space-between; padding:14px 24px; flex-wrap:wrap; gap:12px;}
+  .navbar-left{display:flex; align-items:center; gap:14px;}
+  .logo{font-family:'Fraunces',serif; font-weight:700; font-size:1.3rem; letter-spacing:0.02em;}
+  .logo span{color:var(--rust);}
+  .btn-sidebar-toggle{
+    display:flex; align-items:center; gap:6px;
+    padding:7px 12px; font-size:0.72rem;
+  }
+  nav ul{display:flex; gap:22px; list-style:none; flex-wrap:wrap; row-gap:6px;}
+  nav a{font-size:0.82rem; text-decoration:none; color:var(--foam); opacity:0.75; transition:opacity .2s;}
+  nav a:hover{opacity:1;}
+  @media(max-width:760px){
+    .navbar{padding:10px 16px;}
+    nav ul{gap:10px 14px; width:100%; justify-content:flex-start;}
+    nav a{font-size:0.7rem;}
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{padding:40px 0 20px;}
+  .hero h1{font-size:clamp(1.9rem,4vw,2.9rem); font-weight:600; max-width:780px; line-height:1.1;}
+  .hero h1 em{font-style:italic; color:var(--sand);}
+  .hero p.lead{max-width:640px; margin-top:12px; color:rgba(245,241,230,0.72); font-size:0.95rem;}
+
+  /* ---------- FILTRI METEO & PLANCIA ---------- */
+  .meteo-filter-card{
+    margin-top:20px;
+    padding:16px 20px;
+    border:1px solid var(--line-strong);
+    border-radius:4px;
+    background:rgba(13,44,62,0.3);
+  }
+  .filter-row{
+    display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;
+  }
+  .filter-row .field{flex:1; min-width:140px;}
+  @media(max-width:600px){
+    .filter-row{flex-direction:column; align-items:stretch;}
+    .filter-row .field{width:100%;}
+    .filter-row .btn-outline{width:100%;}
+  }
+
   .plancia{
-    margin-top:28px;
+    margin-top:20px;
     border:1px solid var(--line-strong);
     background:linear-gradient(180deg, rgba(13,44,62,0.55), rgba(6,24,38,0.55));
     border-radius:4px;
@@ -183,62 +283,105 @@
   }
   .plancia-head{
     display:flex; justify-content:space-between; align-items:baseline;
-    padding:18px 22px; border-bottom:1px solid var(--line);
+    padding:16px 20px; border-bottom:1px solid var(--line);
     flex-wrap:wrap; gap:8px;
   }
   .plancia-head h2{font-size:1.1rem; font-weight:600;}
   .plancia-head .updated{font-size:0.7rem; color:rgba(245,241,230,0.5); font-family:'IBM Plex Mono',monospace;}
   .gauges{
     display:grid; grid-template-columns:repeat(5,1fr);
-    border-top:1px solid var(--line);
   }
-  @media(max-width:900px){ .gauges{grid-template-columns:repeat(2,1fr);} }
-  @media(max-width:640px){
+  @media(max-width:1100px){ .gauges{grid-template-columns:repeat(3,1fr);} }
+  @media(max-width:760px){ .gauges{grid-template-columns:repeat(2,1fr);} }
+  @media(max-width:540px){
     .gauges{grid-template-columns:1fr;}
-    .gauge{grid-column:span 1 !important; min-height:auto; padding:18px 16px;}
-    .gauge-value{font-size:1.5rem;}
+    .gauge{grid-column:span 1 !important; min-height:auto; padding:16px 14px;}
+    .gauge-value{font-size:1.4rem;}
   }
   .gauge{
-    padding:22px 18px; border-right:1px solid var(--line); border-bottom:1px solid var(--line);
-    display:flex; flex-direction:column; gap:10px; min-height:150px; justify-content:space-between;
+    padding:18px 16px; border-right:1px solid var(--line); border-bottom:1px solid var(--line);
+    display:flex; flex-direction:column; gap:8px; min-height:140px; justify-content:space-between;
   }
-  .gauge-label{font-family:'IBM Plex Mono',monospace; font-size:0.66rem; text-transform:uppercase; letter-spacing:.1em; color:rgba(245,241,230,0.55);}
-  .gauge-value{font-family:'IBM Plex Mono',monospace; font-size:1.9rem; font-weight:500; color:var(--foam);}
-  .gauge-sub{font-size:0.75rem; color:rgba(245,241,230,0.55);}
-  .compass{width:52px; height:52px; border:1px solid var(--line-strong); border-radius:50%; position:relative; align-self:flex-start;}
+  .gauge-label{font-family:'IBM Plex Mono',monospace; font-size:0.65rem; text-transform:uppercase; letter-spacing:.1em; color:rgba(245,241,230,0.55);}
+  .gauge-value{font-family:'IBM Plex Mono',monospace; font-size:1.7rem; font-weight:500; color:var(--foam);}
+  .gauge-sub{font-size:0.74rem; color:rgba(245,241,230,0.55); line-height:1.35;}
+  .compass{width:46px; height:46px; border:1px solid var(--line-strong); border-radius:50%; position:relative; align-self:flex-start;}
   .compass .needle{
-    position:absolute; left:50%; top:50%; width:2px; height:20px; background:var(--rust);
+    position:absolute; left:50%; top:50%; width:2px; height:18px; background:var(--rust);
     transform-origin:bottom center; transform:translate(-50%,-100%) rotate(0deg);
   }
-  .moon-icon{width:34px; height:34px; border-radius:50%; background:var(--sand); position:relative; overflow:hidden; align-self:flex-start;}
+  .moon-icon{width:32px; height:32px; border-radius:50%; background:var(--sand); position:relative; overflow:hidden; align-self:flex-start;}
   .moon-icon .shadow{position:absolute; top:0; height:100%; background:var(--navy-deep);}
-  .trend-arrow{font-size:1.4rem;}
-  .score-bar{height:8px; background:rgba(245,241,230,0.12); border-radius:4px; overflow:hidden; margin-top:4px;}
+  .trend-arrow{font-size:1.2rem;}
+  .score-bar{height:7px; background:rgba(245,241,230,0.12); border-radius:4px; overflow:hidden; margin-top:4px;}
   .score-bar .fill{height:100%; background:var(--rust);}
-  .plancia-empty{padding:44px 22px; text-align:center; color:rgba(245,241,230,0.5); font-size:0.9rem;}
+  .plancia-empty{padding:40px 20px; text-align:center; color:rgba(245,241,230,0.5); font-size:0.88rem; grid-column:1 / -1;}
 
-  /* ---------- SECTIONS ---------- */
-  section{padding:64px 0;}
-  @media(max-width:600px){ section{padding:40px 0;} }
-  section.alt{background:rgba(13,44,62,0.28); border-top:1px solid var(--line); border-bottom:1px solid var(--line);}
-  .section-head{margin-bottom:34px; max-width:640px;}
-  .section-head h2{font-size:clamp(1.5rem,3vw,2.1rem); font-weight:600; margin-top:10px;}
-  .section-head p{color:rgba(245,241,230,0.65); margin-top:10px; font-size:0.95rem;}
+  /* ---------- TABELLA PREVISIONI & CONTROLLI MODALITÀ ---------- */
+  .forecast-section{margin-top:28px;}
+  .fc-controls{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:12px;
+    padding:12px 14px;
+    background:rgba(13,44,62,0.35);
+    border:1px solid var(--line-strong);
+    border-radius:4px;
+  }
+  .fc-mode-group{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .fc-day-label{
+    font-size:0.82rem;
+    color:var(--sand);
+    font-family:'IBM Plex Mono',monospace;
+  }
+  @media(max-width:600px){
+    .fc-controls{flex-direction:column; align-items:stretch;}
+    .fc-mode-group{width:100%;}
+    .fc-mode-group button{flex:1; padding:8px 6px; font-size:0.68rem;}
+    .fc-day-label{text-align:center;}
+  }
 
-  /* map */
+  .window-summary{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line-strong); border:1px solid var(--line-strong); margin-bottom:16px; border-radius:4px; overflow:hidden;}
+  @media(max-width:700px){ .window-summary{grid-template-columns:repeat(2,1fr);} }
+  .window-summary .cell{background:var(--navy-deep); padding:14px; }
+  .window-summary .cell .l{font-family:'IBM Plex Mono',monospace; font-size:0.62rem; text-transform:uppercase; letter-spacing:.08em; color:rgba(245,241,230,0.5);}
+  .window-summary .cell .v{font-family:'IBM Plex Mono',monospace; font-size:1.3rem; margin-top:4px;}
+  .fc-scroll{overflow-x:auto; border:1px solid var(--line-strong); border-radius:4px;}
+  table.fc{border-collapse:collapse; width:100%; min-width:840px;}
+  table.fc th, table.fc td{padding:10px 12px; text-align:left; font-size:0.78rem; border-bottom:1px solid var(--line); white-space:nowrap;}
+  table.fc th{font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.06em; font-size:0.64rem; color:var(--rust); background:rgba(6,24,38,0.75); position:sticky; top:0;}
+  table.fc tbody tr:hover{background:rgba(245,241,230,0.04);}
+  table.fc td.mono{font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- SEZIONI SECONDARIE ---------- */
+  section{padding:48px 0;}
+  @media(max-width:600px){ section{padding:32px 0;} }
+  section.alt{background:rgba(13,44,62,0.25); border-top:1px solid var(--line); border-bottom:1px solid var(--line);}
+  .section-head{margin-bottom:24px; max-width:680px;}
+  .section-head h2{font-size:clamp(1.35rem,2.5vw,1.85rem); font-weight:600; margin-top:6px;}
+  .section-head p{color:rgba(245,241,230,0.65); margin-top:6px; font-size:0.9rem;}
+
+  /* mappa */
   #mapWrap{position:relative;}
   .map-toolbar{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px;}
-  .map-toolbar .hint-inline{font-size:0.78rem; color:rgba(245,241,230,0.55); font-family:'IBM Plex Mono',monospace; flex:1; min-width:180px;}
+  .map-toolbar .hint-inline{font-size:0.76rem; color:rgba(245,241,230,0.55); font-family:'IBM Plex Mono',monospace; flex:1; min-width:180px;}
   #map{height:460px; width:100%; border:1px solid var(--line-strong); border-radius:4px; cursor:crosshair;}
   #map .osm-base-tile{filter:invert(94%) hue-rotate(180deg) brightness(0.95) contrast(0.88) saturate(0.9);}
   #map .leaflet-control-layers{
     background:var(--navy-mid); color:var(--foam); border:1px solid var(--line-strong);
-    font-family:'Inter',sans-serif; font-size:0.8rem; padding:10px;
+    font-family:'Inter',sans-serif; font-size:0.78rem; padding:8px 10px;
   }
   #map .leaflet-control-layers-base{display:none;}
-  #map .leaflet-control-layers label{margin-bottom:6px; display:block;}
+  #map .leaflet-control-layers label{margin-bottom:4px; display:block;}
   @media(max-width:600px){ #map{height:340px;} }
-  .map-note{margin-top:12px; font-size:0.8rem; color:rgba(245,241,230,0.55); font-family:'IBM Plex Mono',monospace;}
+  .map-note{margin-top:10px; font-size:0.76rem; color:rgba(245,241,230,0.5); font-family:'IBM Plex Mono',monospace;}
   #mapWrap:fullscreen, #mapWrap.is-fullscreen{
     position:fixed; inset:0; z-index:400; width:100%; height:100%;
     background:var(--navy-deep); padding:12px; display:flex; flex-direction:column;
@@ -263,277 +406,322 @@
   .spot-marker.selected span{width:18px; height:18px; background:rgba(217,98,43,0.95);}
   .spot-actions{display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;}
 
-  /* forecast table */
-  .filter-row{display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap; margin-bottom:24px; padding:18px; border:1px solid var(--line-strong); border-radius:4px; background:rgba(13,44,62,0.25);}
-  .filter-row input[type="date"], .filter-row input[type="time"]{padding:10px 12px;}
-  @media(max-width:600px){
-    .filter-row{flex-direction:column; align-items:stretch;}
-    .filter-row .field{width:100%;}
-    .filter-row input{width:100%; font-size:16px;}
-    .filter-row .btn-outline{width:100%;}
-  }
-  .window-summary{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line-strong); border:1px solid var(--line-strong); margin-bottom:16px; border-radius:4px; overflow:hidden;}
-  @media(max-width:700px){ .window-summary{grid-template-columns:repeat(2,1fr);} }
-  .window-summary .cell{background:var(--navy-deep); padding:16px; }
-  .window-summary .cell .l{font-family:'IBM Plex Mono',monospace; font-size:0.64rem; text-transform:uppercase; letter-spacing:.08em; color:rgba(245,241,230,0.5);}
-  .window-summary .cell .v{font-family:'IBM Plex Mono',monospace; font-size:1.4rem; margin-top:6px;}
-  .fc-scroll{overflow-x:auto; border:1px solid var(--line-strong); border-radius:4px;}
-  table.fc{border-collapse:collapse; width:100%; min-width:760px;}
-  table.fc th, table.fc td{padding:12px 14px; text-align:left; font-size:0.82rem; border-bottom:1px solid var(--line); white-space:nowrap;}
-  table.fc th{font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.06em; font-size:0.66rem; color:var(--rust); background:rgba(6,24,38,0.5); position:sticky; top:0;}
-  table.fc tbody tr:hover{background:rgba(245,241,230,0.04);}
-  table.fc td.mono{font-family:'IBM Plex Mono',monospace;}
-
-  /* technique cards */
-  .tech-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line-strong); border:1px solid var(--line-strong);}
-  @media(max-width:900px){.tech-grid{grid-template-columns:repeat(2,1fr);}}
-  @media(max-width:600px){.tech-grid{grid-template-columns:1fr;}}
-  .tech-card{background:var(--navy-deep); padding:26px 22px; cursor:pointer;}
-  .tech-card .num{font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--rust);}
-  .tech-card h3{font-size:1.15rem; margin-top:10px; font-weight:600;}
-  .tech-card .tag{font-size:0.72rem; color:rgba(245,241,230,0.5); margin-top:4px; font-family:'IBM Plex Mono',monospace;}
-  .tech-card p{font-size:0.86rem; color:rgba(245,241,230,0.7); margin-top:12px; display:none;}
-  .tech-card.open p{display:block;}
-  .tech-card .spec{font-size:0.78rem; margin-top:10px; display:none; color:var(--sand);}
-  .tech-card.open .spec{display:block;}
-
-  /* calendar */
-  .cal-scroll{overflow-x:auto; border:1px solid var(--line-strong); border-radius:4px;}
-  table.cal{border-collapse:collapse; width:100%; min-width:840px;}
-  table.cal th, table.cal td{border:1px solid var(--line); padding:9px 8px; text-align:center; font-size:0.72rem;}
-  table.cal th{font-family:'IBM Plex Mono',monospace; background:rgba(6,24,38,0.5); text-transform:uppercase; font-size:0.62rem; letter-spacing:.05em;}
-  table.cal td:first-child, table.cal th:first-child{text-align:left; font-family:'Inter',sans-serif; font-weight:600; font-size:0.78rem; position:sticky; left:0; background:var(--navy-deep);}
-  .dot{width:9px; height:9px; border-radius:50%; background:var(--seaweed); display:inline-block;}
-  .dot.peak{background:var(--rust);}
-
-  /* spot info */
+  /* info spot */
   .spot-info{
-    margin-top:36px; border:1px solid var(--line-strong); border-radius:4px; padding:26px;
+    margin-top:28px; border:1px solid var(--line-strong); border-radius:4px; padding:22px;
     background:rgba(13,44,62,0.3); display:none;
   }
   .spot-info.visible{display:block;}
-  .spot-info h3{font-size:1.2rem; font-weight:600;}
-  .spot-info .badges{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;}
-  .badge{font-family:'IBM Plex Mono',monospace; font-size:0.66rem; text-transform:uppercase; letter-spacing:.05em; border:1px solid var(--line-strong); padding:4px 10px; border-radius:20px; color:var(--sand);}
-  .spot-info ul{margin-top:14px; padding-left:18px; font-size:0.88rem; color:rgba(245,241,230,0.78);}
-  .spot-info li{margin-bottom:6px;}
+  .spot-info h3{font-size:1.15rem; font-weight:600;}
+  .spot-info .badges{display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;}
+  .badge{font-family:'IBM Plex Mono',monospace; font-size:0.66rem; text-transform:uppercase; letter-spacing:.05em; border:1px solid var(--line-strong); padding:3px 8px; border-radius:20px; color:var(--sand);}
+  .spot-info ul{margin-top:12px; padding-left:18px; font-size:0.84rem; color:rgba(245,241,230,0.78);}
+  .spot-info li{margin-bottom:5px;}
 
-  footer{padding:40px 0; border-top:1px solid var(--line); font-size:0.75rem; color:rgba(245,241,230,0.45);}
+  /* tecniche */
+  .tech-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line-strong); border:1px solid var(--line-strong);}
+  @media(max-width:900px){.tech-grid{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:600px){.tech-grid{grid-template-columns:1fr;}}
+  .tech-card{background:var(--navy-deep); padding:22px 18px; cursor:pointer;}
+  .tech-card .num{font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--rust);}
+  .tech-card h3{font-size:1.1rem; margin-top:8px; font-weight:600;}
+  .tech-card .tag{font-size:0.7rem; color:rgba(245,241,230,0.5); margin-top:3px; font-family:'IBM Plex Mono',monospace;}
+  .tech-card p{font-size:0.84rem; color:rgba(245,241,230,0.7); margin-top:10px; display:none;}
+  .tech-card.open p{display:block;}
+  .tech-card .spec{font-size:0.76rem; margin-top:8px; display:none; color:var(--sand);}
+  .tech-card.open .spec{display:block;}
+
+  /* calendario */
+  .cal-scroll{overflow-x:auto; border:1px solid var(--line-strong); border-radius:4px;}
+  table.cal{border-collapse:collapse; width:100%; min-width:800px;}
+  table.cal th, table.cal td{border:1px solid var(--line); padding:8px 6px; text-align:center; font-size:0.72rem;}
+  table.cal th{font-family:'IBM Plex Mono',monospace; background:rgba(6,24,38,0.5); text-transform:uppercase; font-size:0.6rem; letter-spacing:.05em;}
+  table.cal td:first-child, table.cal th:first-child{text-align:left; font-family:'Inter',sans-serif; font-weight:600; font-size:0.75rem; position:sticky; left:0; background:var(--navy-deep);}
+  .dot{width:8px; height:8px; border-radius:50%; background:var(--seaweed); display:inline-block;}
+  .dot.peak{background:var(--rust);}
+
+  footer{padding:36px 0; border-top:1px solid var(--line); font-size:0.74rem; color:rgba(245,241,230,0.45);}
   footer a{text-decoration:underline; opacity:0.8;}
-  .loading{font-family:'IBM Plex Mono',monospace; font-size:0.8rem; color:rgba(245,241,230,0.5);}
+  .loading{font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:rgba(245,241,230,0.5);}
 
-  ::-webkit-scrollbar{height:8px; width:8px;}
+  ::-webkit-scrollbar{height:7px; width:7px;}
   ::-webkit-scrollbar-thumb{background:var(--line-strong); border-radius:4px;}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="navbar wrap">
-    <div class="logo">LENZA<span>.</span></div>
-    <nav>
-      <ul>
-        <li><a href="#punti">I miei punti</a></li>
-        <li><a href="#mappa">Mappa</a></li>
-        <li><a href="#meteo">Previsioni</a></li>
-        <li><a href="#tecniche">Tecniche</a></li>
-        <li><a href="#calendario">Calendario</a></li>
-      </ul>
-    </nav>
-  </div>
-</header>
+<div class="app-shell">
 
-<main>
-  <section class="hero wrap">
-    <div class="eyebrow">Bollettino del pescatore · ovunque tu peschi</div>
-    <h1>Vento, mare e luna, <em>per i tuoi</em> spot.</h1>
-    <p class="lead">Nessun elenco precompilato: cerchi un luogo, clicchi sulla mappa o usi la tua posizione, e costruisci la tua lista di poste personali. Da lì, dati meteomarini in tempo reale su vento, moto ondoso, pressione e fase lunare — con fonti pubbliche e completamente gratuite.</p>
+  <!-- BACKDROP MOBILE SIDEBAR -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
-    <div class="points-panel" id="punti">
-      <h2>I tuoi punti di pesca</h2>
-      <div class="hint">Cerca un luogo per nome, oppure attiva "Aggiungi dalla mappa" e clicca dove vuoi segnare una posta.</div>
+  <!-- MENU LATERALE A SINISTRA: GESTIONE SPOT -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">I tuoi punti di pesca</div>
+      <button class="close-sidebar-btn" id="closeSidebarBtn" title="Chiudi menu">×</button>
+    </div>
 
+    <div>
+      <div class="hint">Cerca per nome, clicca sulla mappa o usa il GPS per salvare le tue poste personali.</div>
+      
       <div class="search-row">
-        <input type="text" id="searchInput" placeholder="Cerca una località (es. Alghero, Genova, Formentera…)" class="mono">
+        <input type="text" id="searchInput" placeholder="Cerca una località (es. Alghero, Genova…)" class="mono">
         <button class="btn" id="searchBtn">Cerca</button>
+      </div>
+      <div class="search-results" id="searchResults"></div>
+
+      <div class="sidebar-actions" style="margin-top:10px;">
         <button class="btn-outline" id="mapAddToggle">Aggiungi dalla mappa</button>
         <button class="btn-outline" id="locateBtn">Usa la mia posizione</button>
       </div>
+    </div>
 
-      <div class="search-results" id="searchResults"></div>
-
-      <div class="add-form" id="addForm">
-        <div class="field">
-          <label>Nome del punto</label>
-          <input type="text" id="newName" placeholder="Es. Scogliera del faro">
-        </div>
-        <div class="field">
-          <label>Tipo di posta</label>
-          <select class="field-select" id="newType">
-            <option value="spiaggia">Spiaggia sabbiosa</option>
-            <option value="scogliera">Scogliera / roccia</option>
-            <option value="porto">Porto o foce</option>
-            <option value="isola">Isola / canale con corrente</option>
-            <option value="lago">Acqua interna (lago/fiume)</option>
-            <option value="altro">Altro</option>
-          </select>
-        </div>
-        <div class="field">
+    <!-- FORM AGGIUNTA / MODIFICA SPOT -->
+    <div class="add-form" id="addForm">
+      <div class="field">
+        <label>Nome del punto</label>
+        <input type="text" id="newName" placeholder="Es. Scogliera del faro">
+      </div>
+      <div class="field">
+        <label>Tipo di posta</label>
+        <select class="field-select" id="newType">
+          <option value="spiaggia">Spiaggia sabbiosa</option>
+          <option value="scogliera">Scogliera / roccia</option>
+          <option value="porto">Porto o foce</option>
+          <option value="isola">Isola / canale</option>
+          <option value="lago">Acqua interna</option>
+          <option value="altro">Altro</option>
+        </select>
+      </div>
+      <div style="display:flex; gap:6px;">
+        <div class="field" style="flex:1;">
           <label>Latitudine</label>
-          <input type="number" step="0.0001" class="coord-input mono" id="newLat">
+          <input type="number" step="0.0001" class="mono" id="newLat">
         </div>
-        <div class="field">
+        <div class="field" style="flex:1;">
           <label>Longitudine</label>
-          <input type="number" step="0.0001" class="coord-input mono" id="newLon">
+          <input type="number" step="0.0001" class="mono" id="newLon">
         </div>
-        <div class="field" style="flex:1; min-width:220px;">
-          <label>Note / caratteristiche</label>
-          <textarea id="newNotes" placeholder="Es. fondale misto, corrente da levante, parcheggio vicino…"></textarea>
-        </div>
-        <button class="btn" id="confirmAdd">Salva punto</button>
+      </div>
+      <div class="field">
+        <label>Note / caratteristiche</label>
+        <textarea id="newNotes" placeholder="Es. fondale misto, corrente da levante…"></textarea>
+      </div>
+      <div style="display:flex; gap:6px; margin-top:4px;">
+        <button class="btn" id="confirmAdd" style="flex:1;">Salva</button>
         <button class="btn-outline" id="cancelAdd">Annulla</button>
       </div>
+    </div>
 
+    <!-- LISTA CHIP DEI PUNTI -->
+    <div>
+      <div class="sidebar-section-title">Spot salvati</div>
       <div class="spot-chips" id="spotChips"></div>
-      <div class="empty-note" id="emptyNote">Non hai ancora aggiunto nessun punto. Una volta salvati, restano nel browser anche se chiudi la pagina.</div>
-
-      <div class="dash-wrap" id="dashWrap" style="display:none;">
-        <div class="dash-head">
-          <h3>I tuoi punti salvati</h3>
-          <button class="btn-outline" id="refreshScoresBtn">Calcola punteggi mattina/sera</button>
-        </div>
-        <div class="dash-scroll">
-          <table class="dash-table" id="dashTable">
-            <thead>
-              <tr><th>Punto</th><th>Tipo</th><th>Coordinate</th><th>Punteggio mattina</th><th>Punteggio sera</th><th></th></tr>
-            </thead>
-            <tbody id="dashBody"></tbody>
-          </table>
-        </div>
-        <div class="dash-hint">Finestra mattina: 1h prima – 3h dopo l'alba. Finestra sera: 1h prima – 3h dopo il tramonto. Calcolo basato su vento medio, onda media e fase lunare del giorno.</div>
-      </div>
+      <div class="empty-note" id="emptyNote">Nessun punto salvato. Restano memorizzati nel tuo browser.</div>
     </div>
 
-    <div class="meteo-block" id="meteo">
-      <div class="section-head" style="margin-top:36px;">
-        <div class="eyebrow">Orario e plancia</div>
-        <h2>Vento, mare e pressione</h2>
-        <p>Imposta data e orario qui sotto: la plancia si ricalcola subito su quell’ora. Se lasci vuoto, usa l’orario attuale. Con data + da/a vedi anche la media della finestra e il dettaglio ora per ora più in basso.</p>
+    <!-- TABELLA SINTESI & PUNTEGGI NELLA SIDEBAR -->
+    <div class="dash-wrap" id="dashWrap" style="display:none;">
+      <div class="dash-head">
+        <h3>Indici spot</h3>
+        <button class="btn-outline" id="refreshScoresBtn" style="padding:4px 8px; font-size:0.65rem;">Ricalcola</button>
       </div>
-
-      <div class="filter-row">
-        <div class="field">
-          <label>Data</label>
-          <input type="date" id="filterDate" class="mono">
-        </div>
-        <div class="field">
-          <label>Orario (plancia)</label>
-          <input type="time" id="filterFrom" class="mono">
-        </div>
-        <div class="field">
-          <label>Fino a (finestra, opzionale)</label>
-          <input type="time" id="filterTo" class="mono">
-        </div>
-        <button class="btn-outline" id="clearFilterBtn">Ora attuale</button>
-      </div>
-    </div>
-
-    <div class="plancia" id="plancia">
-      <div class="plancia-head">
-        <h2 id="plancia-title">Plancia</h2>
-        <div class="updated mono" id="updatedAt"></div>
-      </div>
-      <div class="gauges" id="gauges">
-        <div class="plancia-empty">Aggiungi o seleziona un punto, poi imposta l’orario sopra se vuoi i dati di un momento preciso.</div>
-      </div>
-    </div>
-
-    <div class="plancia" id="extraPlancia" style="margin-top:16px;">
-      <div class="plancia-head">
-        <h2>Dati aggiuntivi</h2>
-        <div class="updated mono">umidità · rugiada · UV · visibilità · onda di vento e mare lungo · corrente</div>
-      </div>
-      <div class="gauges" id="extraGauges">
-        <div class="plancia-empty">Compaiono qui non appena selezioni un punto.</div>
-      </div>
-    </div>
-
-    <div class="plancia" id="sunMoonPlancia" style="margin-top:16px;">
-      <div class="plancia-head">
-        <h2>Sole, luna e finestre solunari</h2>
-        <div class="updated mono" id="sunMoonUpdated"></div>
-      </div>
-      <div class="gauges" id="sunMoonGauges">
-        <div class="plancia-empty">Calcolati localmente da SunCalc, nessuna chiamata di rete necessaria.</div>
-      </div>
-    </div>
-
-    <div id="forecastContainer" style="margin-top:28px;">
-      <div class="fc-scroll">
-        <table class="fc" id="fcTable">
-          <thead><tr id="fcHead"></tr></thead>
-          <tbody id="fcBody">
-            <tr><td colspan="13" class="loading">Aggiungi un punto per vedere le previsioni.</td></tr>
-          </tbody>
+      <div class="dash-scroll">
+        <table class="dash-table" id="dashTable">
+          <thead>
+            <tr><th>Punto</th><th>Mattina</th><th>Sera</th><th></th></tr>
+          </thead>
+          <tbody id="dashBody"></tbody>
         </table>
       </div>
+      <div class="dash-hint">Finestre: alba (-1h/+3h) e tramonto (-1h/+3h).</div>
     </div>
-  </section>
+  </aside>
 
-  <section id="mappa" class="wrap alt">
-    <div class="section-head">
-      <div class="eyebrow">Carta nautica</div>
-      <h2>La tua mappa</h2>
-      <p>Clicca sulla carta per leggere la profondità del fondo. Trascina un punto per spostarlo, oppure aprilo e modifica nome, tipo e note. In alto a destra puoi accendere i livelli di batimetria e la segnaletica nautica di OpenSeaMap.</p>
-    </div>
-    <div id="mapWrap">
-      <div class="map-toolbar">
-        <button class="btn-outline" id="fullscreenBtn" type="button">Schermo intero</button>
-        <span class="hint-inline">Clic = profondità · trascina = sposta lo spot · “Aggiungi dalla mappa” per un nuovo punto</span>
+  <!-- CONTENUTO PRINCIPALE A DESTRA -->
+  <div class="main-area">
+    <header>
+      <div class="navbar wrap">
+        <div class="navbar-left">
+          <button class="btn-outline btn-sidebar-toggle" id="toggleSidebarBtn">
+            <span>📍</span> <strong>Spot</strong> <span id="spotBadge" class="mono" style="color:var(--rust);">(0)</span>
+          </button>
+          <div class="logo">LENZA<span>.</span></div>
+        </div>
+        <nav>
+          <ul>
+            <li><a href="#plancia">Plancia</a></li>
+            <li><a href="#previsioni">Previsioni</a></li>
+            <li><a href="#dati-extra">Dati extra</a></li>
+            <li><a href="#sole-luna">Sole & Luna</a></li>
+            <li><a href="#mappa">Mappa</a></li>
+            <li><a href="#tecniche">Tecniche</a></li>
+            <li><a href="#calendario">Calendario</a></li>
+          </ul>
+        </nav>
       </div>
-      <div id="map"></div>
-      <div class="depth-readout" id="depthReadout" hidden></div>
-    </div>
-    <div class="map-note">© OpenStreetMap contributors · geocoding e dati meteomarini © Open-Meteo.com — nessuna chiave API richiesta</div>
-  </section>
+    </header>
 
-  <section id="tecniche" class="alt">
-    <div class="wrap">
-      <div class="section-head">
-        <div class="eyebrow">Manuale di bordo</div>
-        <h2>Tecniche da riva e da barca</h2>
-        <p>Tocca una scheda per aprirla: attrezzatura essenziale, tipo di costa più adatta e specie target di stagione. Utili ovunque, adatta i dettagli alla tua zona.</p>
-      </div>
-      <div class="tech-grid" id="techGrid"></div>
-    </div>
-  </section>
+    <main>
+      <!-- HERO -->
+      <section class="hero wrap">
+        <div class="eyebrow">Bollettino del pescatore · ovunque tu peschi</div>
+        <h1>Vento, mare e luna, <em>per i tuoi</em> spot.</h1>
+        <p class="lead">Seleziona uno spot dal menu a sinistra o clicca sulla mappa. I dati meteomarini in tempo reale, la batimetria e gli indici di pesca si aggiornano istantaneamente.</p>
 
-  <section id="calendario" class="wrap">
-    <div class="section-head">
-      <div class="eyebrow">Stagionalità indicativa</div>
-      <h2>Calendario delle specie</h2>
-      <p>Riferito alle acque temperate del Mediterraneo: adatta i mesi in anticipo o ritardo di 2-4 settimane a seconda di quanto sei a nord o a sud. <span class="dot"></span> presente &nbsp; <span class="dot peak"></span> periodo di punta</p>
-    </div>
-    <div class="cal-scroll">
-      <table class="cal" id="calTable"></table>
-    </div>
+        <!-- FILTRI ORARIO / FINESTRA -->
+        <div class="meteo-filter-card">
+          <div class="filter-row">
+            <div class="field">
+              <label>Data</label>
+              <input type="date" id="filterDate" class="mono">
+            </div>
+            <div class="field">
+              <label>Orario (plancia)</label>
+              <input type="time" id="filterFrom" class="mono">
+            </div>
+            <div class="field">
+              <label>Fino a (finestra, opzionale)</label>
+              <input type="time" id="filterTo" class="mono">
+            </div>
+            <button class="btn-outline" id="clearFilterBtn" style="padding:10px 14px;">Ora attuale</button>
+          </div>
+        </div>
 
-    <div class="spot-info" id="spotInfo"></div>
-  </section>
-</main>
+        <!-- 1. PLANCIA (PRIMA SEZIONE) -->
+        <div class="plancia" id="plancia">
+          <div class="plancia-head">
+            <h2 id="plancia-title">Plancia</h2>
+            <div class="updated mono" id="updatedAt"></div>
+          </div>
+          <div class="gauges" id="gauges">
+            <div class="plancia-empty">Aggiungi o seleziona un punto dal menu a sinistra per visualizzare vento, mare, pressione, solunare e indice di pesca.</div>
+          </div>
+        </div>
 
-<footer class="wrap">
-  Progetto indipendente senza fini di lucro. Meteo, mare e geocoding: <a href="https://open-meteo.com" target="_blank">Open-Meteo.com</a> (API gratuita, licenza CC-BY 4.0). Mappa: <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>. Batimetria (livelli e click sul fondo): <a href="https://emodnet.ec.europa.eu/en/bathymetry" target="_blank">EMODnet Bathymetry</a>, <a href="https://www.gebco.net" target="_blank">GEBCO</a> e <a href="https://www.opentopodata.org/" target="_blank">OpenTopoData</a>. Segnaletica nautica: <a href="https://www.openseamap.org" target="_blank">OpenSeaMap</a>. Sole e luna: calcolati localmente con <a href="https://github.com/mourner/suncalc" target="_blank">SunCalc</a>. I tuoi punti sono salvati nella memoria locale di questo browser (localStorage): restano anche chiudendo la pagina, ma solo su questo dispositivo e non vengono inviati da nessuna parte. Rispetta sempre le misure minime, i periodi di fermo biologico e i regolamenti locali prima di pescare.
-</footer>
+        <!-- 2. TABELLA PREVISIONI (SECONDA SEZIONE CON BOTTONI MODALITÀ) -->
+        <div class="forecast-section" id="previsioni">
+          <div class="section-head" style="margin-top:32px; margin-bottom:14px;">
+            <div class="eyebrow">Dettaglio meteomarino</div>
+            <h2>Tabella previsioni & Indice orario</h2>
+            <p>Visualizza le condizioni giorno per giorno o entra nel dettaglio ora per ora con indice euristico di pesca e direzione delle correnti.</p>
+          </div>
+
+          <!-- BARRA CONTROLLI CON I 3 BOTTONI (ORA PER ORA, MATTINA, SERA) + 7 GIORNI -->
+          <div class="fc-controls">
+            <div class="fc-mode-group">
+              <button type="button" class="btn-outline active" id="btnMode7d">7 Giorni</button>
+              <button type="button" class="btn-outline" id="btnModeAllHours">Ora per ora</button>
+              <button type="button" class="btn-outline" id="btnModeMorning">Mattina</button>
+              <button type="button" class="btn-outline" id="btnModeEvening">Sera</button>
+            </div>
+            <div class="fc-day-label" id="fcCurrentDayLabel">Vista: Panoramica 7 giorni</div>
+          </div>
+
+          <div id="forecastContainer">
+            <div class="fc-scroll">
+              <table class="fc" id="fcTable">
+                <thead><tr id="fcHead"></tr></thead>
+                <tbody id="fcBody">
+                  <tr><td colspan="12" class="loading">Aggiungi o seleziona un punto per vedere le previsioni.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. DATI AGGIUNTIVI -->
+      <section id="dati-extra" class="wrap alt" style="border-radius:4px; margin-top:20px;">
+        <div class="section-head">
+          <div class="eyebrow">Parametri secondari</div>
+          <h2>Dati ambientali & Stato del mare</h2>
+          <p>Umidità, punto di rugiada, radiazione UV, visibilità ottica, onda di vento e mare lungo per la massima precisione.</p>
+        </div>
+        <div class="plancia" id="extraPlancia" style="margin-top:0;">
+          <div class="gauges" id="extraGauges">
+            <div class="plancia-empty">Compaiono qui non appena selezioni un punto.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. SOLE, LUNA E FINESTRE SOLUNARI -->
+      <section id="sole-luna" class="wrap">
+        <div class="section-head">
+          <div class="eyebrow">Effemeridi e knight theory</div>
+          <h2>Sole, luna & Finestre solunari</h2>
+          <p>Orari di alba, tramonto, ora blu e picchi di attività solunare (Major e Minor) calcolati direttamente per la latitudine e longitudine della tua posta.</p>
+        </div>
+        <div class="plancia" id="sunMoonPlancia" style="margin-top:0;">
+          <div class="plancia-head">
+            <h2>Effemeridi & Solunare</h2>
+            <div class="updated mono" id="sunMoonUpdated"></div>
+          </div>
+          <div class="gauges" id="sunMoonGauges">
+            <div class="plancia-empty">Calcolati localmente da SunCalc.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. MAPPA CARTA NAUTICA -->
+      <section id="mappa" class="wrap alt">
+        <div class="section-head">
+          <div class="eyebrow">Carta nautica</div>
+          <h2>La tua mappa</h2>
+          <p>Clicca sulla carta per leggere la profondità del fondale. Trascina un punto per spostarlo. Puoi attivare i livelli di batimetria ad alta risoluzione (EMODnet/GEBCO) e la segnaletica OpenSeaMap.</p>
+        </div>
+        <div id="mapWrap">
+          <div class="map-toolbar">
+            <button class="btn-outline" id="fullscreenBtn" type="button">Schermo intero</button>
+            <span class="hint-inline">Clic = profondità · trascina = sposta lo spot · “Aggiungi dalla mappa” per un nuovo punto</span>
+          </div>
+          <div id="map"></div>
+          <div class="depth-readout" id="depthReadout" hidden></div>
+        </div>
+        <div class="map-note">© OpenStreetMap contributors · geocoding e dati meteomarini © Open-Meteo.com — nessuna chiave API richiesta</div>
+
+        <div class="spot-info" id="spotInfo"></div>
+      </section>
+
+      <!-- 6. TECNICHE DI PESCA -->
+      <section id="tecniche">
+        <div class="wrap">
+          <div class="section-head">
+            <div class="eyebrow">Manuale di bordo</div>
+            <h2>Tecniche da riva e da barca</h2>
+            <p>Tocca una scheda per aprirla: attrezzatura essenziale, spot ideale e specie target.</p>
+          </div>
+          <div class="tech-grid" id="techGrid"></div>
+        </div>
+      </section>
+
+      <!-- 7. CALENDARIO SPECIE -->
+      <section id="calendario" class="wrap">
+        <div class="section-head">
+          <div class="eyebrow">Stagionalità indicativa</div>
+          <h2>Calendario delle specie</h2>
+          <p>Riferito alle acque del Mediterraneo. <span class="dot"></span> presente &nbsp; <span class="dot peak"></span> periodo di punta</p>
+        </div>
+        <div class="cal-scroll">
+          <table class="cal" id="calTable"></table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="wrap">
+      Progetto indipendente senza fini di lucro. Dati meteo e marini: <a href="https://open-meteo.com" target="_blank">Open-Meteo.com</a>. Mappe e batimetria: <a href="https://www.openstreetmap.org" target="_blank">OSM</a>, <a href="https://emodnet.ec.europa.eu" target="_blank">EMODnet</a>, <a href="https://www.gebco.net" target="_blank">GEBCO</a>, <a href="https://www.openseamap.org" target="_blank">OpenSeaMap</a>. Effemeridi: <a href="https://github.com/mourner/suncalc" target="_blank">SunCalc</a>. I tuoi spot rimangono salvati esclusivamente nel localStorage di questo browser.
+    </footer>
+  </div>
+</div>
 
 <script>
 /* ---------------------------------------------------------
-   STATO: i punti li crea solo l'utente, nessun preset
+   STATO GLOBALE & LOCALSTORAGE
 --------------------------------------------------------- */
 let SPOTS = [];
 let currentSpot = null;
 let mapAddMode = false;
-let pendingCoords = null;
 let lastWeather = null, lastMarine = null;
 let editingSpotId = null;
 const STORAGE_KEY = "lenza_spots_v1";
@@ -545,11 +733,16 @@ function loadSpotsFromStorage(){
   }catch(e){ SPOTS = []; }
 }
 function saveSpotsToStorage(){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(SPOTS)); }catch(e){ /* storage non disponibile: i punti restano solo in sessione */ }
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(SPOTS)); }catch(e){}
+  updateSpotBadge();
+}
+function updateSpotBadge(){
+  const badge = document.getElementById('spotBadge');
+  if(badge) badge.textContent = `(${SPOTS.length})`;
 }
 
 /* ---------------------------------------------------------
-   UTILS
+   UTILS & FORMATTAZIONE
 --------------------------------------------------------- */
 const WMO = {
   0:"Sereno",1:"Poco nuvoloso",2:"Parz. nuvoloso",3:"Coperto",
@@ -565,14 +758,16 @@ const TYPE_LABEL = {
   isola:"Isola / canale", lago:"Acqua interna", altro:"Altro"
 };
 const TYPE_TIPS = {
-  spiaggia:["Surfcasting: cerca le buche oltre la battigia, spesso segnalate da un cambio di colore dell'acqua","Meglio con mare leggermente mosso, che rimescola il fondale e attira il pesce a caccia","Alba, tramonto e ore notturne sono generalmente più produttive"],
-  scogliera:["Spinning con artificiali leggeri lungo i bordi della scogliera, soprattutto dove la roccia scende ripida","Il bolentino da riva funziona bene su fondali misti roccia-sabbia nelle vicinanze","Occhio alle condizioni di mare: le scogliere esposte diventano pericolose col vento al traverso"],
-  porto:["Bolognese o feeder sotto le luci notturne: molte specie si avvicinano attratte dal plancton","I porti canale e le foci concentrano pesce anche con mare mosso al largo","Ottima alternativa quando il vento rende impraticabili le zone più esposte"],
-  isola:["Traina leggera nei canali con corrente, soprattutto nelle ore centrali del giorno","Il bolentino profondo rende bene vicino ai canali tra isole o secche","Verifica sempre se l'area rientra in una zona protetta con restrizioni alla pesca"],
-  lago:["Spinning o bolognese a seconda della specie target: informati sulla fauna ittica locale","Le rive con vegetazione sommersa o alberi caduti offrono riparo al pesce","Controlla sempre il regolamento locale su licenze e periodi di divieto"],
-  altro:["Osserva il fondale e il tipo di riva per scegliere la tecnica più adatta","Chiedi ai pescatori locali: spesso conoscono le abitudini stagionali del posto","Controlla sempre normative e limiti locali prima di pescare"]
+  spiaggia:["Surfcasting: cerca le buche oltre la battigia visibili dal cambio colore del fondale","Mareggiata in scaduta: momento ideale con fondo rimescolato e pesci a caccia","Alba, tramonto e nottate di luna nuova o piena sono le finestre migliori"],
+  scogliera:["Spinning con artificiali lungo i bordi rocciosi e le schiumate","Bolentino leggero o fondo su fondali misti a ridosso dei massi","Prestare massima attenzione alla sicurezza con vento frontale o moto ondoso in aumento"],
+  porto:["Bolognese o feeder notturno vicino a lampioni e ingressi di corrente","Le foci e i porticanale concentrano pascolo anche quando fuori il mare è mosso","Alternativa protetta ed efficace col forte vento al largo"],
+  isola:["Traina e drifting nei canali soggetti a corrente viva","Bolentino di profondità in prossimità delle risalite e delle secche","Verificare preventivamente l'esistenza di aree marine protette (AMP)"],
+  lago:["Spinning o canna fissa/feeder in base alla stagione e alla specie","Cerca canneti, erbai sommersi o legnaie che forniscono riparo al pesce","Controlla regolamenti provinciali, licenze e periodi di frega"],
+  altro:["Osserva la conformazione della riva e la corrente superficiale","Confrontati con i pescatori locali per capire il comportamento stagionale","Rispetta sempre le normative sulle misure minime"]
 };
+
 function degToCompass(d){
+  if(d == null || isNaN(d)) return "";
   const dirs=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"];
   return dirs[Math.round(d/22.5)%16];
 }
@@ -642,7 +837,60 @@ function refreshFromFilters(){
 }
 
 /* ---------------------------------------------------------
-   GEOCODING (Open-Meteo Geocoding API, gratuita)
+   CALCOLO INDICE PESCA EURISTICO
+--------------------------------------------------------- */
+function calculateFishingScore(wind, wave, pressureTrend, phase){
+  let score = 100;
+  if(wind != null) score -= Math.min(45, wind * 2.2);
+  if(wave != null) score -= Math.min(25, wave * 22);
+  if(pressureTrend != null){
+    if(pressureTrend < -1.2) score -= 12;
+    else if(pressureTrend > 0.8) score += 6;
+  }
+  if(phase != null){
+    const moonBoost = (phase < 0.06 || phase > 0.94 || (phase > 0.46 && phase < 0.54)) ? 10 : 0;
+    score += moonBoost;
+  }
+  return Math.max(5, Math.min(100, Math.round(score)));
+}
+
+function scorePill(score){
+  if(score === null || isNaN(score)) return '<span class="score-pill low">n.d.</span>';
+  let cls = 'low', label = 'Difficile';
+  if(score >= 72){ cls='good'; label='Ottimo'; }
+  else if(score >= 48){ cls='mid'; label='Discreto'; }
+  return `<span class="score-pill ${cls}">${label} · ${score}</span>`;
+}
+
+function scoreBadgeText(score){
+  if(score >= 72) return "Ottime condizioni";
+  if(score >= 48) return "Condizioni discrete";
+  if(score >= 30) return "Condizioni difficili";
+  return "Sconsigliato";
+}
+
+/* ---------------------------------------------------------
+   GESTIONE SIDEBAR MOBILE & TOGGLE
+--------------------------------------------------------- */
+const sidebarEl = document.getElementById('sidebar');
+const backdropEl = document.getElementById('sidebarBackdrop');
+const toggleBtn = document.getElementById('toggleSidebarBtn');
+const closeBtn = document.getElementById('closeSidebarBtn');
+
+function openSidebar(){
+  sidebarEl.classList.add('open');
+  backdropEl.classList.add('open');
+}
+function closeSidebar(){
+  sidebarEl.classList.remove('open');
+  backdropEl.classList.remove('open');
+}
+toggleBtn.addEventListener('click', openSidebar);
+closeBtn.addEventListener('click', closeSidebar);
+backdropEl.addEventListener('click', closeSidebar);
+
+/* ---------------------------------------------------------
+   RICERCA LOCALITÀ (Open-Meteo Geocoding)
 --------------------------------------------------------- */
 async function searchPlace(query){
   const resultsBox = document.getElementById('searchResults');
@@ -652,13 +900,13 @@ async function searchPlace(query){
     const res = await fetch(url);
     const data = await res.json();
     if(!data.results || data.results.length === 0){
-      resultsBox.innerHTML = '<div class="loading">Nessun risultato. Prova con un altro nome o aggiungi il punto direttamente dalla mappa.</div>';
+      resultsBox.innerHTML = '<div class="loading">Nessun risultato. Prova con un altro nome o seleziona dalla mappa.</div>';
       return;
     }
     resultsBox.innerHTML = data.results.map((r,i)=>{
       const parts = [r.admin1, r.country].filter(Boolean).join(', ');
       return `<div class="search-result" data-i="${i}">
-        <div>${r.name}</div>
+        <div><strong>${r.name}</strong></div>
         <div class="sub">${parts} · ${r.latitude.toFixed(3)}, ${r.longitude.toFixed(3)}</div>
       </div>`;
     }).join('');
@@ -682,17 +930,17 @@ document.getElementById('searchInput').addEventListener('keydown', e=>{
 });
 
 /* ---------------------------------------------------------
-   FORM AGGIUNTA PUNTO
+   FORM AGGIUNTA / MODIFICA SPOT
 --------------------------------------------------------- */
 function closeSpotForm(){
   editingSpotId = null;
   document.getElementById('addForm').classList.remove('visible');
-  document.getElementById('confirmAdd').textContent = "Salva punto";
+  document.getElementById('confirmAdd').textContent = "Salva";
 }
 function openAddForm(lat, lon, suggestedName){
   editingSpotId = null;
   document.getElementById('addForm').classList.add('visible');
-  document.getElementById('confirmAdd').textContent = "Salva punto";
+  document.getElementById('confirmAdd').textContent = "Salva";
   document.getElementById('newLat').value = lat.toFixed(4);
   document.getElementById('newLon').value = lon.toFixed(4);
   document.getElementById('newName').value = suggestedName || "";
@@ -700,6 +948,7 @@ function openAddForm(lat, lon, suggestedName){
   document.getElementById('newType').value = "spiaggia";
   document.getElementById('newName').focus();
   document.getElementById('addForm').scrollIntoView({behavior:'smooth', block:'nearest'});
+  if(window.innerWidth <= 1024) openSidebar();
 }
 function openEditForm(id){
   const spot = SPOTS.find(s=>s.id===id);
@@ -714,6 +963,7 @@ function openEditForm(id){
   document.getElementById('newNotes').value = spot.notes || "";
   document.getElementById('newName').focus();
   document.getElementById('addForm').scrollIntoView({behavior:'smooth', block:'nearest'});
+  if(window.innerWidth <= 1024) openSidebar();
 }
 function applySpotCoords(spot, lat, lon){
   spot.lat = lat;
@@ -763,30 +1013,39 @@ document.getElementById('confirmAdd').addEventListener('click', ()=>{
 });
 
 /* ---------------------------------------------------------
-   AGGIUNGI DALLA MAPPA
+   AGGIUNGI DALLA MAPPA & SCROLL ALLA MAPPA
 --------------------------------------------------------- */
 document.getElementById('mapAddToggle').addEventListener('click', function(){
   mapAddMode = !mapAddMode;
   this.classList.toggle('active', mapAddMode);
   this.textContent = mapAddMode ? "Clicca sulla mappa…" : "Aggiungi dalla mappa";
+  if(mapAddMode){
+    if(window.innerWidth <= 1024) closeSidebar();
+    const mapSection = document.getElementById('mappa');
+    if(mapSection){
+      mapSection.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+  }
 });
 
 document.getElementById('locateBtn').addEventListener('click', ()=>{
-  if(!navigator.geolocation){ alert("Geolocalizzazione non disponibile su questo dispositivo."); return; }
+  if(!navigator.geolocation){ alert("Geolocalizzazione non supportata."); return; }
   navigator.geolocation.getCurrentPosition(pos=>{
     const {latitude, longitude} = pos.coords;
     if(map) map.flyTo([latitude, longitude], 12, {duration:0.8});
     openAddForm(latitude, longitude, "La mia posizione");
-  }, ()=> alert("Posizione non disponibile."));
+  }, ()=> alert("Impossibile recuperare la posizione."));
 });
 
 /* ---------------------------------------------------------
-   LISTA CHIP / SELEZIONE
+   LISTA CHIP / SELEZIONE SPOT
 --------------------------------------------------------- */
 function renderChips(){
   const box = document.getElementById('spotChips');
   const empty = document.getElementById('emptyNote');
   const dashWrap = document.getElementById('dashWrap');
+  updateSpotBadge();
+
   if(SPOTS.length === 0){
     box.innerHTML = "";
     empty.style.display = "block";
@@ -798,58 +1057,51 @@ function renderChips(){
   box.innerHTML = SPOTS.map(s=>`
     <div class="chip ${currentSpot && currentSpot.id===s.id ? 'selected':''}" data-id="${s.id}">
       <span>${s.name}</span>
-      <button type="button" class="ed" data-ed="${s.id}" title="Modifica">✎</button>
-      <span class="rm" data-rm="${s.id}">×</span>
+      <div class="chip-actions">
+        <button type="button" class="ed" data-ed="${s.id}" title="Modifica">✎</button>
+        <button type="button" class="rm" data-rm="${s.id}" title="Elimina">×</button>
+      </div>
     </div>
   `).join('');
+
   box.querySelectorAll('.chip').forEach(chip=>{
     chip.addEventListener('click', e=>{
-      if(e.target.dataset.rm || e.target.dataset.ed) return;
+      if(e.target.dataset.rm || e.target.dataset.ed || e.target.closest('button')) return;
       selectSpot(chip.dataset.id);
+      if(window.innerWidth <= 1024) closeSidebar();
     });
   });
   box.querySelectorAll('.ed').forEach(ed=>{
-    ed.addEventListener('click', e=>{
-      e.stopPropagation();
-      openEditForm(ed.dataset.ed);
-    });
+    ed.addEventListener('click', e=>{ e.stopPropagation(); openEditForm(ed.dataset.ed); });
   });
   box.querySelectorAll('.rm').forEach(rm=>{
-    rm.addEventListener('click', e=>{
-      e.stopPropagation();
-      removeSpot(rm.dataset.rm);
-    });
+    rm.addEventListener('click', e=>{ e.stopPropagation(); removeSpot(rm.dataset.rm); });
   });
   renderDashTable();
 }
+
 function renderDashTable(){
   const body = document.getElementById('dashBody');
   body.innerHTML = SPOTS.map(s=>`
     <tr class="dash-row ${currentSpot && currentSpot.id===s.id ? 'selected':''}" data-id="${s.id}">
-      <td>${s.name}</td>
-      <td>${TYPE_LABEL[s.type] || 'Altro'}</td>
-      <td class="mono">${Number(s.lat).toFixed(3)}, ${Number(s.lon).toFixed(3)}</td>
-      <td id="score-am-${s.id}"><span class="score-pill low">da calcolare</span></td>
-      <td id="score-pm-${s.id}"><span class="score-pill low">da calcolare</span></td>
-      <td>
-        <button type="button" class="btn-outline" data-ed="${s.id}" style="padding:6px 10px; font-size:0.64rem;">Modifica</button>
-        <span class="rm" data-rm="${s.id}">×</span>
-      </td>
+      <td><strong>${s.name}</strong></td>
+      <td id="score-am-${s.id}"><span class="score-pill low">—</span></td>
+      <td id="score-pm-${s.id}"><span class="score-pill low">—</span></td>
+      <td><span class="rm" data-rm="${s.id}" title="Elimina">×</span></td>
     </tr>
   `).join('');
   body.querySelectorAll('.dash-row').forEach(row=>{
     row.addEventListener('click', e=>{
-      if(e.target.dataset.rm || e.target.dataset.ed) return;
+      if(e.target.dataset.rm) return;
       selectSpot(row.dataset.id);
+      if(window.innerWidth <= 1024) closeSidebar();
     });
-  });
-  body.querySelectorAll('[data-ed]').forEach(ed=>{
-    ed.addEventListener('click', e=>{ e.stopPropagation(); openEditForm(ed.dataset.ed); });
   });
   body.querySelectorAll('.rm').forEach(rm=>{
     rm.addEventListener('click', e=>{ e.stopPropagation(); removeSpot(rm.dataset.rm); });
   });
 }
+
 function removeSpot(id){
   SPOTS = SPOTS.filter(s=>s.id!==id);
   saveSpotsToStorage();
@@ -857,32 +1109,32 @@ function removeSpot(id){
   if(currentSpot && currentSpot.id===id){
     currentSpot = null;
     document.getElementById('plancia-title').textContent = "Plancia";
-    document.getElementById('gauges').innerHTML = '<div class="plancia-empty">Aggiungi o seleziona un punto per vedere vento, mare, pressione e luna in tempo reale.</div>';
-    document.getElementById('fcBody').innerHTML = '<tr><td colspan="13" class="loading">Aggiungi un punto per vedere le previsioni.</td></tr>';
+    document.getElementById('gauges').innerHTML = '<div class="plancia-empty">Aggiungi o seleziona un punto dal menu per vedere i dati.</div>';
+    document.getElementById('extraGauges').innerHTML = '<div class="plancia-empty">Compaiono qui non appena selezioni un punto.</div>';
+    document.getElementById('fcBody').innerHTML = '<tr><td colspan="12" class="loading">Aggiungi o seleziona un punto per vedere le previsioni.</td></tr>';
     document.getElementById('spotInfo').classList.remove('visible');
   }
   renderChips();
 }
+
 function selectSpot(id){
   const spot = SPOTS.find(s=>s.id===id);
   if(!spot) return;
   currentSpot = spot;
   renderChips();
   highlightMarker(id);
-  if(map) map.flyTo([spot.lat, spot.lon], Math.max(map.getZoom(),9), {duration:0.8});
+  if(map) map.flyTo([spot.lat, spot.lon], Math.max(map.getZoom(), 10), {duration:0.8});
   fetchAll(spot);
   renderSpotInfo(spot);
-  const mapSection = document.getElementById('mappa');
-  if(mapSection) mapSection.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 /* ---------------------------------------------------------
-   FETCH METEO + MARE (Open-Meteo, API pubblica gratuita)
+   FETCH METEO + MARE (Open-Meteo)
 --------------------------------------------------------- */
 async function fetchAll(spot){
-  document.getElementById('gauges').innerHTML = '<div class="loading" style="padding:22px;">Sto interrogando le boe digitali (Open-Meteo)…</div>';
-  document.getElementById('extraGauges').innerHTML = '<div class="loading" style="padding:22px;">Recupero dati aggiuntivi…</div>';
-  document.getElementById('fcBody').innerHTML = '<tr><td colspan="13" class="loading">Recupero previsioni…</td></tr>';
+  document.getElementById('gauges').innerHTML = '<div class="loading" style="padding:22px; grid-column:1/-1;">Interrogazione modelli meteomarini…</div>';
+  document.getElementById('extraGauges').innerHTML = '<div class="loading" style="padding:22px; grid-column:1/-1;">Recupero dati ambientali…</div>';
+  document.getElementById('fcBody').innerHTML = '<tr><td colspan="12" class="loading">Recupero previsioni orarie…</td></tr>';
   document.getElementById('plancia-title').textContent = "Plancia — " + spot.name;
   renderSunMoon(spot);
 
@@ -891,9 +1143,8 @@ async function fetchAll(spot){
     const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${spot.lat}&longitude=${spot.lon}&hourly=wave_height,wave_direction,wave_period,wind_wave_height,wind_wave_period,swell_wave_height,swell_wave_period,swell_wave_direction,ocean_current_velocity,ocean_current_direction,sea_surface_temperature&timezone=auto&forecast_days=7`;
 
     const wRes = await fetch(weatherUrl);
-    if(!wRes.ok) throw new Error("Meteo: risposta " + wRes.status);
+    if(!wRes.ok) throw new Error("Meteo: " + wRes.status);
     const weather = await wRes.json();
-    if(weather.error) throw new Error("Meteo: " + weather.reason);
 
     let marine = null;
     try{
@@ -911,12 +1162,14 @@ async function fetchAll(spot){
     renderExtra(spot, weather, marine);
     renderForecastSection(spot, weather, marine);
   }catch(err){
-    document.getElementById('gauges').innerHTML = '<div class="loading" style="padding:22px;">Dati non disponibili al momento: ' + (err.message || err) + '</div>';
-    document.getElementById('extraGauges').innerHTML = '<div class="loading" style="padding:22px;">Dati non disponibili al momento.</div>';
-    document.getElementById('fcBody').innerHTML = '<tr><td colspan="13" class="loading">Dati non disponibili al momento: ' + (err.message || err) + '</td></tr>';
+    document.getElementById('gauges').innerHTML = `<div class="loading" style="padding:22px; grid-column:1/-1;">Errore di caricamento: ${err.message || err}</div>`;
+    document.getElementById('fcBody').innerHTML = `<tr><td colspan="12" class="loading">Dati non disponibili: ${err.message || err}</td></tr>`;
   }
 }
 
+/* ---------------------------------------------------------
+   RENDERING PLANCIA (10 GAUGES BILANCIATI IN 5 COLONNE)
+--------------------------------------------------------- */
 function renderDashboard(spot, weather, marine){
   const h = weather.hourly;
   const ref = getReferenceDate();
@@ -932,43 +1185,47 @@ function renderDashboard(spot, weather, marine){
   const pressure24 = h.pressure_msl[idx24];
   const pressureTrend = pressure - pressure24;
   const cloud = h.cloud_cover[idx];
+  const precipProb = h.precipitation_probability ? h.precipitation_probability[idx] : 0;
+  const precip = h.precipitation ? h.precipitation[idx] : 0;
+  const wCode = h.weather_code[idx];
 
   let wave = null, wavePeriod = null, seaTemp = null;
+  let swellHeight = null, swellPeriod = null, swellDir = null;
+  let currentVel = null, currentDir = null;
+
   if(marine && marine.hourly){
     const mh = marine.hourly;
     let midx = mh.time ? mh.time.findIndex(t => t === h.time[idx]) : -1;
-    if(midx < 0 && mh.time){
-      midx = closestHourIndex(mh, ref);
-    }
+    if(midx < 0 && mh.time) midx = closestHourIndex(mh, ref);
     if(midx >= 0){
       wave = mh.wave_height ? mh.wave_height[midx] : null;
       wavePeriod = mh.wave_period ? mh.wave_period[midx] : null;
       seaTemp = mh.sea_surface_temperature ? mh.sea_surface_temperature[midx] : null;
+      swellHeight = mh.swell_wave_height ? mh.swell_wave_height[midx] : null;
+      swellPeriod = mh.swell_wave_period ? mh.swell_wave_period[midx] : null;
+      swellDir = mh.swell_wave_direction ? mh.swell_wave_direction[midx] : null;
+      currentVel = mh.ocean_current_velocity ? mh.ocean_current_velocity[midx] : null;
+      currentDir = mh.ocean_current_direction ? mh.ocean_current_direction[midx] : null;
     }
   }
 
   const phase = moonPhase(ref);
   const illumination = Math.round((1 - Math.cos(phase * 2 * Math.PI)) / 2 * 100);
-
-  let score = 100;
-  score -= Math.min(45, wind * 2.2);
-  if(wave !== null) score -= Math.min(25, wave * 22);
-  if(pressureTrend < -1) score -= 15;
-  if(pressureTrend > 1) score += 5;
-  const moonBoost = (phase < 0.06 || phase > 0.94 || (phase > 0.46 && phase < 0.54)) ? 10 : 0;
-  score += moonBoost;
-  score = Math.max(5, Math.min(100, Math.round(score)));
-
-  let scoreLabel = "Sconsigliato";
-  if(score >= 75) scoreLabel = "Ottime condizioni";
-  else if(score >= 55) scoreLabel = "Condizioni discrete";
-  else if(score >= 35) scoreLabel = "Condizioni difficili";
+  const score = calculateFishingScore(wind, wave, pressureTrend, phase);
+  const scoreText = scoreBadgeText(score);
 
   const trendArrow = pressureTrend > 1 ? "↗" : (pressureTrend < -1 ? "↘" : "→");
   const shadowWidth = phase <= 0.5 ? (1 - phase*2) * 100 : (phase-0.5)*2*100;
   const shadowSide = phase <= 0.5 ? "right" : "left";
 
+  let solunarText = "—";
+  if(typeof SunCalc !== 'undefined'){
+    const sTimes = SunCalc.getTimes(ref, spot.lat, spot.lon);
+    solunarText = `Alba ${fmtTime(sTimes.sunrise)} · Tram. ${fmtTime(sTimes.sunset)}`;
+  }
+
   document.getElementById('gauges').innerHTML = `
+    <!-- RIGA 1 (5 box) -->
     <div class="gauge">
       <div class="gauge-label">Vento</div>
       <div class="compass"><div class="needle" style="transform:translate(-50%,-100%) rotate(${windDir}deg)"></div></div>
@@ -977,37 +1234,63 @@ function renderDashboard(spot, weather, marine){
         <div class="gauge-sub">${degToCompass(windDir)} · raffiche ${Math.round(gust)} km/h</div>
       </div>
     </div>
+
     <div class="gauge">
       <div class="gauge-label">Moto ondoso</div>
       <div class="gauge-value">${wave !== null ? wave.toFixed(1)+' m' : '—'}</div>
-      <div class="gauge-sub">${wavePeriod !== null ? 'periodo '+wavePeriod.toFixed(1)+' s' : 'non disponibile qui (acqua interna?)'}</div>
+      <div class="gauge-sub">${wavePeriod !== null ? 'periodo '+wavePeriod.toFixed(1)+' s' : 'acque interne o n.d.'}</div>
     </div>
+
     <div class="gauge">
       <div class="gauge-label">Temperatura</div>
       <div class="gauge-value">${Math.round(temp)}°<span style="font-size:1rem;">C aria</span></div>
       <div class="gauge-sub">${seaTemp !== null ? 'mare '+seaTemp.toFixed(1)+'°C' : 'mare: n.d.'} · nuvole ${cloud}%</div>
     </div>
+
     <div class="gauge">
       <div class="gauge-label">Pressione</div>
       <div class="gauge-value">${Math.round(pressure)} <span class="trend-arrow">${trendArrow}</span></div>
       <div class="gauge-sub">${pressureTrend >= 0 ? '+' : ''}${pressureTrend.toFixed(1)} hPa / 24h</div>
     </div>
+
     <div class="gauge">
       <div class="gauge-label">Luna — ${moonLabel(phase)}</div>
       <div class="moon-icon"><div class="shadow" style="width:${shadowWidth}%; ${shadowSide}:0;"></div></div>
       <div class="gauge-sub">illuminazione ${illumination}%</div>
     </div>
+
+    <!-- RIGA 2 (2 colonne per Indice + 3 colonne a destra) -->
     <div class="gauge" style="grid-column: span 2;">
       <div class="gauge-label">Indice condizioni di pesca (euristico)</div>
-      <div class="gauge-value">${scoreLabel}</div>
+      <div class="gauge-value">${scoreText} <span class="mono" style="font-size:1.1rem; color:var(--rust);">(${score}/100)</span></div>
       <div class="score-bar"><div class="fill" style="width:${score}%"></div></div>
-      <div class="gauge-sub">Basato su vento, onda, trend barico e fase lunare all'orario scelto — non sostituisce il buon senso in mare.</div>
+      <div class="gauge-sub">Stima basata su vento, onda, gradiente barico e fase lunare all'orario selezionato.</div>
+    </div>
+
+    <div class="gauge">
+      <div class="gauge-label">Corrente & Swell</div>
+      <div class="gauge-value" style="font-size:1.4rem;">${currentVel !== null ? currentVel.toFixed(1)+' km/h' : (swellHeight!==null?swellHeight.toFixed(1)+'m':'—')}</div>
+      <div class="gauge-sub">${currentVel !== null ? 'Dir. corrente '+degToCompass(currentDir) : ''} ${swellHeight !== null ? '· Swell '+swellHeight.toFixed(1)+'m ('+degToCompass(swellDir)+')' : 'acque costiere calme'}</div>
+    </div>
+
+    <div class="gauge">
+      <div class="gauge-label">Meteo & Pioggia</div>
+      <div class="gauge-value" style="font-size:1.3rem;">${WMO[wCode] || 'Variabile'}</div>
+      <div class="gauge-sub">Prob. pioggia ${Math.round(precipProb)}% · accumulo ${precip.toFixed(1)} mm</div>
+    </div>
+
+    <div class="gauge">
+      <div class="gauge-label">Attività & Luce</div>
+      <div class="gauge-value" style="font-size:1.2rem;">${solunarText}</div>
+      <div class="gauge-sub">Momenti di picco per predatori nelle finestre crepuscolari.</div>
     </div>
   `;
   document.getElementById('updatedAt').textContent = formatRefLabel(ref, usedNow);
 }
 
-/* Pannello dati aggiuntivi: umidità, rugiada, UV, visibilità, onda di vento/mare lungo, corrente */
+/* ---------------------------------------------------------
+   DATI AGGIUNTIVI
+--------------------------------------------------------- */
 function renderExtra(spot, weather, marine){
   const h = weather.hourly;
   const ref = getReferenceDate();
@@ -1017,15 +1300,12 @@ function renderExtra(spot, weather, marine){
   const dew = h.dew_point_2m ? h.dew_point_2m[idx] : null;
   const uv = h.uv_index ? h.uv_index[idx] : null;
   const vis = h.visibility ? h.visibility[idx] : null;
-  const precipProb = h.precipitation_probability ? h.precipitation_probability[idx] : null;
 
   let windWave=null, swellWave=null, swellPeriod=null, swellDir=null, current=null, currentDir=null;
   if(marine && marine.hourly){
     const mh = marine.hourly;
     let midx = mh.time ? mh.time.findIndex(t => t === h.time[idx]) : -1;
-    if(midx < 0 && mh.time){
-      midx = closestHourIndex(mh, ref);
-    }
+    if(midx < 0 && mh.time) midx = closestHourIndex(mh, ref);
     if(midx >= 0){
       windWave = mh.wind_wave_height ? mh.wind_wave_height[midx] : null;
       swellWave = mh.swell_wave_height ? mh.swell_wave_height[midx] : null;
@@ -1041,43 +1321,44 @@ function renderExtra(spot, weather, marine){
     if(v<3) return "basso";
     if(v<6) return "moderato";
     if(v<8) return "alto";
-    if(v<11) return "molto alto";
-    return "estremo";
+    return "molto alto";
   }
 
   document.getElementById('extraGauges').innerHTML = `
     <div class="gauge">
-      <div class="gauge-label">Umidità / rugiada</div>
+      <div class="gauge-label">Umidità & Rugiada</div>
       <div class="gauge-value">${humidity !== null ? Math.round(humidity)+'%' : '—'}</div>
-      <div class="gauge-sub">${dew !== null ? 'punto di rugiada '+Math.round(dew)+'°C' : ''}</div>
+      <div class="gauge-sub">${dew !== null ? 'Punto di rugiada '+Math.round(dew)+'°C' : ''}</div>
     </div>
     <div class="gauge">
       <div class="gauge-label">Indice UV</div>
       <div class="gauge-value">${uv !== null ? uv.toFixed(1) : '—'}</div>
-      <div class="gauge-sub">${uvLabel(uv)} · picco giornaliero in tabella sotto</div>
+      <div class="gauge-sub">${uvLabel(uv)}</div>
     </div>
     <div class="gauge">
       <div class="gauge-label">Visibilità</div>
       <div class="gauge-value">${vis !== null ? (vis/1000).toFixed(1)+' km' : '—'}</div>
-      <div class="gauge-sub">${precipProb !== null ? 'probabilità pioggia '+Math.round(precipProb)+'%' : ''}</div>
+      <div class="gauge-sub">${vis > 10000 ? 'Ottima trasparenza ottica' : 'Visibilità ridotta'}</div>
     </div>
     <div class="gauge">
-      <div class="gauge-label">Onda di vento / mare lungo</div>
+      <div class="gauge-label">Onda viva / Mare lungo</div>
       <div class="gauge-value">${windWave !== null ? windWave.toFixed(1)+' m' : '—'}</div>
-      <div class="gauge-sub">${swellWave !== null ? 'swell '+swellWave.toFixed(1)+'m'+(swellPeriod!==null?', '+swellPeriod.toFixed(1)+'s':'')+(swellDir!==null?' da '+degToCompass(swellDir):'') : 'swell: n.d.'}</div>
+      <div class="gauge-sub">${swellWave !== null ? 'Swell '+swellWave.toFixed(1)+'m '+swellPeriod.toFixed(0)+'s '+degToCompass(swellDir) : 'Swell assente'}</div>
     </div>
     <div class="gauge">
-      <div class="gauge-label">Corrente superficiale</div>
+      <div class="gauge-label">Corrente marina</div>
       <div class="gauge-value">${current !== null ? current.toFixed(1)+' km/h' : '—'}</div>
-      <div class="gauge-sub">${currentDir !== null ? 'direzione '+degToCompass(currentDir) : 'non disponibile qui'}</div>
+      <div class="gauge-sub">${currentDir !== null ? 'Direzione verso '+degToCompass(currentDir) : 'Dati non rilevati'}</div>
     </div>
   `;
 }
 
-/* Sole, luna e finestre solunari — calcolati localmente con SunCalc, nessuna chiamata di rete */
+/* ---------------------------------------------------------
+   EFFEMERIDI & FINESTRE SOLUNARI
+--------------------------------------------------------- */
 function renderSunMoon(spot){
   if(typeof SunCalc === 'undefined'){
-    document.getElementById('sunMoonGauges').innerHTML = '<div class="plancia-empty">Libreria astronomica non disponibile al momento.</div>';
+    document.getElementById('sunMoonGauges').innerHTML = '<div class="plancia-empty">Modulo astronomico non disponibile.</div>';
     return;
   }
   const now = getReferenceDate();
@@ -1085,7 +1366,6 @@ function renderSunMoon(spot){
   const moonTimes = SunCalc.getMoonTimes(now, spot.lat, spot.lon, true);
   const moonIllum = SunCalc.getMoonIllumination(now);
 
-  // scansione ogni 10 minuti nelle 24h per trovare i transiti lunari (massima e minima altitudine = major periods)
   let maxAlt = -100, minAlt = 100, tMax = null, tMin = null;
   for(let m = 0; m < 24*60; m += 10){
     const t = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, m);
@@ -1096,8 +1376,6 @@ function renderSunMoon(spot){
   }
 
   const fmt = t => t ? fmtTime(t) : "—";
-  const moonPhaseName = moonLabel(moonIllum.phase);
-
   const minorWindows = [moonTimes.rise, moonTimes.set].filter(Boolean).map(fmtTime);
   const majorWindows = [tMax, tMin].filter(Boolean).map(fmtTime);
 
@@ -1105,34 +1383,32 @@ function renderSunMoon(spot){
     <div class="gauge">
       <div class="gauge-label">Alba / Tramonto</div>
       <div class="gauge-value" style="font-size:1.3rem;">${fmt(sunTimes.sunrise)} – ${fmt(sunTimes.sunset)}</div>
-      <div class="gauge-sub">ora blu ${fmt(sunTimes.dawn)} – ${fmt(sunTimes.duskEnd || sunTimes.dusk)}</div>
+      <div class="gauge-sub">Ora blu: ${fmt(sunTimes.dawn)} – ${fmt(sunTimes.dusk)}</div>
     </div>
     <div class="gauge">
       <div class="gauge-label">Levata / Tramonto luna</div>
       <div class="gauge-value" style="font-size:1.3rem;">${moonTimes.rise ? fmtTime(moonTimes.rise) : '—'} – ${moonTimes.set ? fmtTime(moonTimes.set) : '—'}</div>
-      <div class="gauge-sub">${moonTimes.alwaysUp ? "la luna resta sopra l'orizzonte tutto il giorno" : (moonTimes.alwaysDown ? "la luna resta sotto l'orizzonte tutto il giorno" : '')}</div>
+      <div class="gauge-sub">${moonTimes.alwaysUp ? "Luna sempre visibile" : (moonTimes.alwaysDown ? "Luna sotto l'orizzonte" : "Orari locali")}</div>
     </div>
     <div class="gauge">
       <div class="gauge-label">Fase lunare</div>
-      <div class="gauge-value">${moonPhaseName}</div>
-      <div class="gauge-sub">illuminazione ${Math.round(moonIllum.fraction*100)}%</div>
+      <div class="gauge-value" style="font-size:1.3rem;">${moonLabel(moonIllum.phase)}</div>
+      <div class="gauge-sub">Illuminazione ${Math.round(moonIllum.fraction*100)}%</div>
     </div>
     <div class="gauge" style="grid-column: span 2;">
-      <div class="gauge-label">Finestre solunari (teoria Knight, indicativa)</div>
+      <div class="gauge-label">Finestre solunari Knight (ore di picco pascolo)</div>
       <div class="gauge-value" style="font-size:1.05rem;">Major: ${majorWindows.join(' · ') || '—'}</div>
-      <div class="gauge-sub">Minor: ${minorWindows.join(' · ') || '—'} — attività di alimentazione spesso più intensa in queste fasce, soprattutto se coincidono con alba o tramonto.</div>
+      <div class="gauge-sub">Minor: ${minorWindows.join(' · ') || '—'} (attività intensificata se in coincidenza con i cambi di luce)</div>
     </div>
   `;
-  document.getElementById('sunMoonUpdated').textContent = "calcolato per " + now.toLocaleDateString('it-IT');
+  document.getElementById('sunMoonUpdated').textContent = "Calcolo locale per " + now.toLocaleDateString('it-IT');
 }
 
+/* ---------------------------------------------------------
+   TABELLA PREVISIONI CON BOTTONI MODALITÀ (ORA / MATTINA / SERA)
+--------------------------------------------------------- */
 function fcRowHeaderHtml(cols){
   return cols.map(c=>`<th>${c}</th>`).join('');
-}
-function hourlyValueAt(hourly, key, time){
-  if(!hourly || !hourly[key]) return null;
-  const idx = hourly.time.indexOf(time);
-  return idx >= 0 ? hourly[key][idx] : null;
 }
 function marineValueNear(marine, key, time){
   if(!marine || !marine.hourly || !marine.hourly[key]) return null;
@@ -1146,34 +1422,59 @@ function marineValueNear(marine, key, time){
   return idx>=0 ? mh[key][idx] : null;
 }
 
+function updateFcModeButtons(activeMode, dayText){
+  document.querySelectorAll('.fc-mode-group button').forEach(b => b.classList.remove('active'));
+  const btnMap = {
+    '7d': document.getElementById('btnMode7d'),
+    'all': document.getElementById('btnModeAllHours'),
+    'am': document.getElementById('btnModeMorning'),
+    'pm': document.getElementById('btnModeEvening')
+  };
+  if(btnMap[activeMode]) btnMap[activeMode].classList.add('active');
+  const label = document.getElementById('fcCurrentDayLabel');
+  if(label) label.textContent = dayText;
+}
+
 function renderForecastSection(spot, weather, marine){
   let dateVal = document.getElementById('filterDate').value;
   const fromVal = document.getElementById('filterFrom').value;
   const toVal = document.getElementById('filterTo').value;
   const container = document.getElementById('forecastContainer');
-  const h = weather.hourly, d = weather.daily;
+  const h = weather.hourly;
 
-  // rimuove eventuale riepilogo finestra precedente
   const oldSummary = document.getElementById('windowSummary');
   if(oldSummary) oldSummary.remove();
 
   if(!dateVal && fromVal) dateVal = localYmd(new Date());
 
   if(!dateVal){
+    updateFcModeButtons('7d', 'Vista: Panoramica 7 giorni');
     renderOutlook7(spot, weather, marine);
     return;
   }
 
-  // filtra le ore del giorno selezionato
+  // Identifica la modalità attiva
+  let activeMode = 'all';
+  let modeLabel = 'Tutto il giorno (24h)';
+  if(fromVal && toVal){
+    const dObj = new Date(dateVal + 'T12:00:00');
+    const st = SunCalc.getTimes(dObj, spot.lat, spot.lon);
+    const amFrom = fmtTime(new Date(st.sunrise.getTime() - 60*60*1000));
+    const pmFrom = fmtTime(new Date(st.sunset.getTime() - 60*60*1000));
+    if(fromVal === amFrom){ activeMode = 'am'; modeLabel = `Finestra Mattina (${fromVal} - ${toVal})`; }
+    else if(fromVal === pmFrom){ activeMode = 'pm'; modeLabel = `Finestra Sera (${fromVal} - ${toVal})`; }
+    else { modeLabel = `Finestra ${fromVal} - ${toVal}`; }
+  }
+  updateFcModeButtons(activeMode, `${fmtDay(dateVal)} · ${modeLabel}`);
+
   const dayIndices = h.time.map((t,i)=>i).filter(i => h.time[i].startsWith(dateVal));
   if(dayIndices.length === 0){
     document.getElementById('fcHead').innerHTML = '';
-    document.getElementById('fcBody').innerHTML = '<tr><td class="loading">Nessun dato per questa data: le previsioni coprono solo i prossimi 7 giorni.</td></tr>';
+    document.getElementById('fcBody').innerHTML = '<tr><td class="loading">Nessun dato per questa data.</td></tr>';
     return;
   }
 
   let indices = dayIndices;
-  let summaryHtml = "";
   if(fromVal && toVal){
     indices = dayIndices.filter(i=>{
       const hh = h.time[i].slice(11,16);
@@ -1181,14 +1482,11 @@ function renderForecastSection(spot, weather, marine){
     });
     if(indices.length === 0) indices = dayIndices;
 
-    // medie della finestra
     const avg = arr => { const vals = indices.map(i=>arr[i]).filter(v=>v!=null); return vals.length? vals.reduce((a,b)=>a+b,0)/vals.length : null; };
     const avgWind = avg(h.wind_speed_10m);
     const avgGust = avg(h.wind_gusts_10m);
     const avgTemp = avg(h.temperature_2m);
     const avgPrecipProb = avg(h.precipitation_probability);
-    const avgUv = h.uv_index ? avg(h.uv_index) : null;
-    const avgHumidity = h.relative_humidity_2m ? avg(h.relative_humidity_2m) : null;
     let avgWave = null, avgCurrent = null;
     if(marine && marine.hourly){
       const waveArr = indices.map(i=>marineValueNear(marine,'wave_height', h.time[i])).filter(v=>v!=null);
@@ -1196,7 +1494,7 @@ function renderForecastSection(spot, weather, marine){
       const curArr = indices.map(i=>marineValueNear(marine,'ocean_current_velocity', h.time[i])).filter(v=>v!=null);
       avgCurrent = curArr.length ? curArr.reduce((a,b)=>a+b,0)/curArr.length : null;
     }
-    summaryHtml = `
+    const summaryHtml = `
       <div class="window-summary" id="windowSummary">
         <div class="cell"><div class="l">Vento medio</div><div class="v">${avgWind!==null?Math.round(avgWind)+' km/h':'—'}</div></div>
         <div class="cell"><div class="l">Raffiche medie</div><div class="v">${avgGust!==null?Math.round(avgGust)+' km/h':'—'}</div></div>
@@ -1204,26 +1502,31 @@ function renderForecastSection(spot, weather, marine){
         <div class="cell"><div class="l">Prob. pioggia</div><div class="v">${avgPrecipProb!==null?Math.round(avgPrecipProb)+'%':'—'}</div></div>
         <div class="cell"><div class="l">Onda media</div><div class="v">${avgWave!==null?avgWave.toFixed(1)+' m':'—'}</div></div>
         <div class="cell"><div class="l">Corrente media</div><div class="v">${avgCurrent!==null?avgCurrent.toFixed(1)+' km/h':'—'}</div></div>
-        <div class="cell"><div class="l">UV medio</div><div class="v">${avgUv!==null?avgUv.toFixed(1):'—'}</div></div>
-        <div class="cell"><div class="l">Umidità media</div><div class="v">${avgHumidity!==null?Math.round(avgHumidity)+'%':'—'}</div></div>
       </div>
     `;
     container.insertAdjacentHTML('afterbegin', summaryHtml);
   }
 
-  document.getElementById('fcHead').innerHTML = fcRowHeaderHtml(["Ora","Meteo","Temp","Vento","Raffiche","Onda","Corrente","Pressione","UV","Pioggia"]);
+  document.getElementById('fcHead').innerHTML = fcRowHeaderHtml(["Ora","Indice pesca","Meteo","Temp","Vento","Raffiche","Onda","Corrente (vel & dir)","Pressione","UV","Pioggia"]);
+  
   document.getElementById('fcBody').innerHTML = indices.map(i=>{
     const t = h.time[i];
     const wave = marineValueNear(marine,'wave_height', t);
-    const current = marineValueNear(marine,'ocean_current_velocity', t);
+    const currentVel = marineValueNear(marine,'ocean_current_velocity', t);
+    const currentDir = marineValueNear(marine,'ocean_current_direction', t);
+    const pTrend = (i >= 3) ? (h.pressure_msl[i] - h.pressure_msl[i-3]) : 0;
+    const hourPhase = moonPhase(new Date(t));
+    const hScore = calculateFishingScore(h.wind_speed_10m[i], wave, pTrend, hourPhase);
+
     return `<tr>
-      <td class="mono">${t.slice(11,16)}</td>
+      <td class="mono"><strong>${t.slice(11,16)}</strong></td>
+      <td>${scorePill(hScore)}</td>
       <td>${WMO[h.weather_code[i]] || '—'}</td>
       <td class="mono">${Math.round(h.temperature_2m[i])}°</td>
       <td class="mono">${Math.round(h.wind_speed_10m[i])} km/h ${degToCompass(h.wind_direction_10m[i])}</td>
       <td class="mono">${Math.round(h.wind_gusts_10m[i])} km/h</td>
       <td class="mono">${wave!==null?wave.toFixed(1)+' m':'—'}</td>
-      <td class="mono">${current!==null?current.toFixed(1)+' km/h':'—'}</td>
+      <td class="mono">${currentVel!==null ? `${currentVel.toFixed(1)} km/h ${currentDir!==null ? degToCompass(currentDir) : ''}` : '—'}</td>
       <td class="mono">${Math.round(h.pressure_msl[i])} hPa</td>
       <td class="mono">${h.uv_index ? h.uv_index[i].toFixed(1) : '—'}</td>
       <td class="mono">${h.precipitation_probability ? Math.round(h.precipitation_probability[i])+'%' : '—'}</td>
@@ -1234,7 +1537,7 @@ function renderForecastSection(spot, weather, marine){
 function renderOutlook7(spot, weather, marine){
   const d = weather.daily;
   const h = weather.hourly;
-  document.getElementById('fcHead').innerHTML = fcRowHeaderHtml(["Giorno","Meteo","Temp","UV max","Finestra mattina (vento/onda)","Finestra sera (vento/onda)","Dettaglio"]);
+  document.getElementById('fcHead').innerHTML = fcRowHeaderHtml(["Giorno","Indice pesca medio","Meteo","Temp","UV max","Mattina (alba -1h/+3h)","Sera (tram. -1h/+3h)","Dettaglio"]);
 
   const avgInWindow = (arr, fromT, toT) => {
     const vals = [];
@@ -1254,6 +1557,8 @@ function renderOutlook7(spot, weather, marine){
     const dayStr = d.time[i];
     const dayDate = new Date(dayStr+"T12:00:00");
     const sunTimes = SunCalc.getTimes(dayDate, spot.lat, spot.lon);
+    const dayPhase = moonPhase(dayDate);
+
     const amFrom = new Date(sunTimes.sunrise.getTime() - 60*60*1000);
     const amTo = new Date(sunTimes.sunrise.getTime() + 3*60*60*1000);
     const pmFrom = new Date(sunTimes.sunset.getTime() - 60*60*1000);
@@ -1264,6 +1569,10 @@ function renderOutlook7(spot, weather, marine){
     const amWave = avgWaveInWindow(amFrom, amTo);
     const pmWave = avgWaveInWindow(pmFrom, pmTo);
 
+    const amScore = calculateFishingScore(amWind, amWave, 0, dayPhase);
+    const pmScore = calculateFishingScore(pmWind, pmWave, 0, dayPhase);
+    const dayAvgScore = Math.round((amScore + pmScore) / 2);
+
     let hIdx = h.time.findIndex(t => t.startsWith(dayStr) && t.endsWith("13:00"));
     if(hIdx < 0) hIdx = h.time.findIndex(t => t.startsWith(dayStr));
     const code = h.weather_code ? h.weather_code[hIdx] : d.weather_code[i];
@@ -1271,16 +1580,17 @@ function renderOutlook7(spot, weather, marine){
     rows += `<tr class="day-row" data-day="${dayStr}"
         data-am-from="${fmtTime(amFrom)}" data-am-to="${fmtTime(amTo)}"
         data-pm-from="${fmtTime(pmFrom)}" data-pm-to="${fmtTime(pmTo)}">
-      <td class="day-cell" style="cursor:pointer;">${fmtDay(dayStr)}</td>
+      <td class="day-cell" style="cursor:pointer;"><strong>${fmtDay(dayStr)}</strong></td>
+      <td>${scorePill(dayAvgScore)}</td>
       <td>${WMO[code] || '—'}</td>
       <td class="mono">${Math.round(d.temperature_2m_min[i])}° / ${Math.round(d.temperature_2m_max[i])}°</td>
       <td class="mono">${d.uv_index_max ? d.uv_index_max[i].toFixed(1) : '—'}</td>
-      <td class="mono">${amWind!==null?Math.round(amWind)+' km/h':'—'}${amWave!==null?' · onda '+amWave.toFixed(1)+'m':''}</td>
-      <td class="mono">${pmWind!==null?Math.round(pmWind)+' km/h':'—'}${pmWave!==null?' · onda '+pmWave.toFixed(1)+'m':''}</td>
+      <td class="mono">${scorePill(amScore)} <span style="font-size:0.7rem; opacity:0.8;">${amWind!==null?Math.round(amWind)+'km/h':''} ${amWave!==null?'· '+amWave.toFixed(1)+'m':''}</span></td>
+      <td class="mono">${scorePill(pmScore)} <span style="font-size:0.7rem; opacity:0.8;">${pmWind!==null?Math.round(pmWind)+'km/h':''} ${pmWave!==null?'· '+pmWave.toFixed(1)+'m':''}</span></td>
       <td>
-        <button class="btn-outline day-btn-full" style="padding:6px 10px; font-size:0.64rem;">Ora per ora</button>
-        <button class="btn-outline day-btn-am" style="padding:6px 10px; font-size:0.64rem;">Mattina</button>
-        <button class="btn-outline day-btn-pm" style="padding:6px 10px; font-size:0.64rem;">Sera</button>
+        <button class="btn-outline day-btn-full" style="padding:4px 8px; font-size:0.65rem;">Ore</button>
+        <button class="btn-outline day-btn-am" style="padding:4px 8px; font-size:0.65rem;">Mattina</button>
+        <button class="btn-outline day-btn-pm" style="padding:4px 8px; font-size:0.65rem;">Sera</button>
       </td>
     </tr>`;
   }
@@ -1311,8 +1621,48 @@ function applyDayFilter(dayStr, fromStr, toStr){
   document.getElementById('filterFrom').value = fromStr;
   document.getElementById('filterTo').value = toStr;
   refreshFromFilters();
-  document.getElementById('meteo').scrollIntoView({behavior:'smooth', block:'start'});
+  document.getElementById('previsioni').scrollIntoView({behavior:'smooth', block:'start'});
 }
+
+/* ---------------------------------------------------------
+   HANDLERS PER I 3 BOTTONI DI VISTA RAPIDA (ORA, MATTINA, SERA)
+--------------------------------------------------------- */
+function getActiveDayString(){
+  const cur = document.getElementById('filterDate').value;
+  return cur || localYmd(new Date());
+}
+
+document.getElementById('btnMode7d').addEventListener('click', ()=>{
+  document.getElementById('filterDate').value = '';
+  document.getElementById('filterFrom').value = '';
+  document.getElementById('filterTo').value = '';
+  refreshFromFilters();
+});
+
+document.getElementById('btnModeAllHours').addEventListener('click', ()=>{
+  const day = getActiveDayString();
+  applyDayFilter(day, '', '');
+});
+
+document.getElementById('btnModeMorning').addEventListener('click', ()=>{
+  const day = getActiveDayString();
+  if(!currentSpot){ applyDayFilter(day, '06:00', '09:00'); return; }
+  const dObj = new Date(day + 'T12:00:00');
+  const st = SunCalc.getTimes(dObj, currentSpot.lat, currentSpot.lon);
+  const amFrom = fmtTime(new Date(st.sunrise.getTime() - 60*60*1000));
+  const amTo = fmtTime(new Date(st.sunrise.getTime() + 3*60*60*1000));
+  applyDayFilter(day, amFrom, amTo);
+});
+
+document.getElementById('btnModeEvening').addEventListener('click', ()=>{
+  const day = getActiveDayString();
+  if(!currentSpot){ applyDayFilter(day, '18:00', '21:00'); return; }
+  const dObj = new Date(day + 'T12:00:00');
+  const st = SunCalc.getTimes(dObj, currentSpot.lat, currentSpot.lon);
+  const pmFrom = fmtTime(new Date(st.sunset.getTime() - 60*60*1000));
+  const pmTo = fmtTime(new Date(st.sunset.getTime() + 3*60*60*1000));
+  applyDayFilter(day, pmFrom, pmTo);
+});
 
 ['filterDate','filterFrom','filterTo'].forEach(id=>{
   const el = document.getElementById(id);
@@ -1327,20 +1677,83 @@ document.getElementById('clearFilterBtn').addEventListener('click', ()=>{
 });
 
 /* ---------------------------------------------------------
-   MAPPA (Leaflet + OpenStreetMap, gratuita)
+   CALCOLO PUNTEGGI PER TUTTI GLI SPOT SALVATI
+--------------------------------------------------------- */
+async function computeAllScores(){
+  const btn = document.getElementById('refreshScoresBtn');
+  btn.disabled = true;
+  btn.textContent = "…";
+  for(const spot of SPOTS){
+    try{
+      const now = new Date();
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${spot.lat}&longitude=${spot.lon}&hourly=wind_speed_10m&forecast_days=1&timezone=auto`;
+      const murl = `https://marine-api.open-meteo.com/v1/marine?latitude=${spot.lat}&longitude=${spot.lon}&hourly=wave_height&forecast_days=1&timezone=auto`;
+      const wRes = await fetch(url);
+      const w = await wRes.json();
+      let waveVals = null, waveTimes = null;
+      try{
+        const mRes = await fetch(murl);
+        const m = await mRes.json();
+        if(m && m.hourly){ waveVals = m.hourly.wave_height; waveTimes = m.hourly.time; }
+      }catch(e){}
+
+      const sunTimes = SunCalc.getTimes(now, spot.lat, spot.lon);
+      const dayPhase = moonPhase(now);
+
+      const amFrom = new Date(sunTimes.sunrise.getTime() - 60*60*1000);
+      const amTo = new Date(sunTimes.sunrise.getTime() + 3*60*60*1000);
+      const pmFrom = new Date(sunTimes.sunset.getTime() - 60*60*1000);
+      const pmTo = new Date(sunTimes.sunset.getTime() + 3*60*60*1000);
+
+      const avgWindow = (times, values, f, t) => {
+        if(!values || !times) return null;
+        let s=0, n=0;
+        times.forEach((timeStr, idx)=>{
+          const dt = new Date(timeStr);
+          if(dt >= f && dt <= t && values[idx] != null){ s += values[idx]; n++; }
+        });
+        return n > 0 ? s/n : null;
+      };
+
+      const amWind = avgWindow(w.hourly.time, w.hourly.wind_speed_10m, amFrom, amTo);
+      const pmWind = avgWindow(w.hourly.time, w.hourly.wind_speed_10m, pmFrom, pmTo);
+      const amWave = avgWindow(waveTimes, waveVals, amFrom, amTo);
+      const pmWave = avgWindow(waveTimes, waveVals, pmFrom, pmTo);
+
+      const amScore = calculateFishingScore(amWind, amWave, 0, dayPhase);
+      const pmScore = calculateFishingScore(pmWind, pmWave, 0, dayPhase);
+
+      const amCell = document.getElementById('score-am-'+spot.id);
+      const pmCell = document.getElementById('score-pm-'+spot.id);
+      if(amCell) amCell.innerHTML = scorePill(amScore);
+      if(pmCell) pmCell.innerHTML = scorePill(pmScore);
+    }catch(e){
+      const amCell = document.getElementById('score-am-'+spot.id);
+      const pmCell = document.getElementById('score-pm-'+spot.id);
+      if(amCell) amCell.innerHTML = '<span class="score-pill low">err</span>';
+      if(pmCell) pmCell.innerHTML = '<span class="score-pill low">err</span>';
+    }
+    await new Promise(r=>setTimeout(r, 120));
+  }
+  btn.disabled = false;
+  btn.textContent = "Ricalcola";
+}
+document.getElementById('refreshScoresBtn').addEventListener('click', computeAllScores);
+
+/* ---------------------------------------------------------
+   MAPPA & BATIMETRIA (Leaflet)
 --------------------------------------------------------- */
 let map, markers = {};
 function initMap(){
-  map = L.map('map', {scrollWheelZoom:false}).setView([46, 10], 4);
+  map = L.map('map', {scrollWheelZoom:false}).setView([42.5, 12.5], 5);
 
-  const base = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
     maxZoom: 19,
     subdomains: 'abcd',
     className: 'osm-base-tile'
   }).addTo(map);
 
-  // Batimetria EMODnet (alta risoluzione, acque europee) — WMS pubblico gratuito, nessuna chiave
   const emodnetBathy = L.tileLayer.wms('https://ows.emodnet-bathymetry.eu/wms', {
     layers: 'mean_rainbowcolour',
     format: 'image/png',
@@ -1349,7 +1762,6 @@ function initMap(){
     attribution: 'EMODnet Bathymetry'
   });
 
-  // Batimetria GEBCO (copertura globale) — WMS pubblico gratuito, nessuna chiave
   const gebcoBathy = L.tileLayer.wms('https://wms.gebco.net/mapserv', {
     layers: 'GEBCO_LATEST',
     format: 'image/png',
@@ -1358,16 +1770,15 @@ function initMap(){
     attribution: 'GEBCO'
   });
 
-  // Segnaletica nautica: boe, fari, ormeggi — OpenSeaMap, tile gratuite senza chiave
   const seamarks = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
     attribution: 'OpenSeaMap contributors',
     maxZoom: 18
   });
 
   L.control.layers(null, {
-    "Batimetria EMODnet (Europa, alta risoluzione)": emodnetBathy,
+    "Batimetria EMODnet (Europa)": emodnetBathy,
     "Batimetria GEBCO (globale)": gebcoBathy,
-    "Boe e segnaletica nautica (OpenSeaMap)": seamarks
+    "Boe e segnaletica (OpenSeaMap)": seamarks
   }, {collapsed:false}).addTo(map);
 
   map.on('click', async e=>{
@@ -1397,31 +1808,18 @@ function initMap(){
   fsBtn.addEventListener('click', async ()=>{
     const wrap = document.getElementById('mapWrap');
     try{
-      if(document.fullscreenElement){
-        await document.exitFullscreen();
-      }else if(wrap.requestFullscreen){
-        await wrap.requestFullscreen();
-      }else{
-        wrap.classList.toggle('is-fullscreen');
-      }
-    }catch(err){
-      wrap.classList.toggle('is-fullscreen');
-    }
+      if(document.fullscreenElement){ await document.exitFullscreen(); }
+      else if(wrap.requestFullscreen){ await wrap.requestFullscreen(); }
+      else { wrap.classList.toggle('is-fullscreen'); }
+    }catch(err){ wrap.classList.toggle('is-fullscreen'); }
     syncMapFullscreen();
   });
   document.addEventListener('fullscreenchange', ()=>{
     if(!document.fullscreenElement) document.getElementById('mapWrap').classList.remove('is-fullscreen');
     syncMapFullscreen();
   });
-  document.addEventListener('keydown', e=>{
-    if(e.key !== 'Escape') return;
-    const wrap = document.getElementById('mapWrap');
-    if(wrap.classList.contains('is-fullscreen') && !document.fullscreenElement){
-      wrap.classList.remove('is-fullscreen');
-      syncMapFullscreen();
-    }
-  });
 }
+
 function pickNumericDepth(obj, depth){
   if(obj==null || depth>6) return null;
   if(typeof obj === 'number' && isFinite(obj)) return obj;
@@ -1448,6 +1846,7 @@ function pickNumericDepth(obj, depth){
   }
   return null;
 }
+
 async function fetchDepth(lat, lon){
   const sources = [
     {name:'EMODnet', url:`https://rest.emodnet-bathymetry.eu/depth_sample?geom=POINT(${lon} ${lat})`},
@@ -1464,23 +1863,21 @@ async function fetchDepth(lat, lon){
   }
   return null;
 }
-function describeDepth(z){
-  if(z < -0.5) return {title: Math.abs(z).toFixed(1)+' m', sub:'profondità del fondo marino'};
-  if(z > 0.5) return {title: z.toFixed(1)+' m s.l.m.', sub:'terra emersa (quota, non fondale)'};
-  return {title:'circa 0 m', sub:'livello del mare o battigia'};
-}
+
 async function showDepthAt(lat, lon){
   const readout = document.getElementById('depthReadout');
   readout.hidden = false;
   readout.innerHTML = `<strong>Profondità…</strong><div class="gauge-sub">${lat.toFixed(4)}, ${lon.toFixed(4)}</div>`;
   const result = await fetchDepth(lat, lon);
   if(!result){
-    readout.innerHTML = `<strong>Profondità non disponibile</strong><div class="gauge-sub">${lat.toFixed(4)}, ${lon.toFixed(4)} · prova a zoomare in mare aperto</div>`;
+    readout.innerHTML = `<strong>Profondità non disponibile</strong><div class="gauge-sub">${lat.toFixed(4)}, ${lon.toFixed(4)}</div>`;
     return;
   }
-  const d = describeDepth(result.z);
-  readout.innerHTML = `<strong>Fondo: ${d.title}</strong><div class="gauge-sub">${d.sub} · ${result.source} · ${lat.toFixed(4)}, ${lon.toFixed(4)}</div>`;
+  const z = result.z;
+  const depthText = z < -0.5 ? `${Math.abs(z).toFixed(1)} m (fondale)` : (z > 0.5 ? `${z.toFixed(1)} m s.l.m. (terra)` : '0 m (battigia)');
+  readout.innerHTML = `<strong>Fondo: ${depthText}</strong><div class="gauge-sub">${result.source} · ${lat.toFixed(4)}, ${lon.toFixed(4)}</div>`;
 }
+
 function addMarker(spot){
   const icon = L.divIcon({
     className: 'spot-marker' + (currentSpot && currentSpot.id===spot.id ? ' selected' : ''),
@@ -1507,6 +1904,7 @@ function addMarker(spot){
   });
   markers[spot.id] = marker;
 }
+
 function highlightMarker(id){
   Object.entries(markers).forEach(([sid,m])=>{
     const el = m.getElement();
@@ -1514,9 +1912,6 @@ function highlightMarker(id){
   });
 }
 
-/* ---------------------------------------------------------
-   INFO PUNTO SELEZIONATO
---------------------------------------------------------- */
 function renderSpotInfo(spot){
   const el = document.getElementById('spotInfo');
   el.classList.add('visible');
@@ -1527,109 +1922,27 @@ function renderSpotInfo(spot){
       <span class="badge">${TYPE_LABEL[spot.type] || 'Altro'}</span>
       <span class="badge">${Number(spot.lat).toFixed(3)}, ${Number(spot.lon).toFixed(3)}</span>
     </div>
-    ${notes ? `<p style="margin-top:12px; color:rgba(245,241,230,0.78); font-size:0.9rem;">${notes.replace(/</g,'')}</p>` : ''}
+    ${notes ? `<p style="margin-top:10px; color:rgba(245,241,230,0.8); font-size:0.86rem;">${notes.replace(/</g,'')}</p>` : ''}
     <ul>${(TYPE_TIPS[spot.type] || TYPE_TIPS.altro).map(t=>`<li>${t}</li>`).join('')}</ul>
     <div class="spot-actions">
-      <button type="button" class="btn" id="editSpotBtn">Modifica spot</button>
+      <button type="button" class="btn" id="editSpotBtn">Modifica questo spot</button>
     </div>
   `;
   document.getElementById('editSpotBtn').addEventListener('click', ()=> openEditForm(spot.id));
 }
 
 /* ---------------------------------------------------------
-   PUNTEGGI MATTINA/SERA PER LA DASHBOARD DEI PUNTI SALVATI
---------------------------------------------------------- */
-function scorePill(score){
-  if(score === null) return '<span class="score-pill low">n.d.</span>';
-  let cls = 'low', label = 'Difficile';
-  if(score >= 70){ cls='good'; label='Buono'; }
-  else if(score >= 45){ cls='mid'; label='Discreto'; }
-  return `<span class="score-pill ${cls}">${label} · ${score}</span>`;
-}
-function windowScoreFromAverages(avgWind, avgWave, moonPhaseVal){
-  if(avgWind === null) return null;
-  let score = 100 - Math.min(45, avgWind*2.2);
-  if(avgWave !== null) score -= Math.min(25, avgWave*22);
-  if(moonPhaseVal !== null && (moonPhaseVal < 0.06 || moonPhaseVal > 0.94 || (moonPhaseVal > 0.46 && moonPhaseVal < 0.54))) score += 10;
-  return Math.max(5, Math.min(100, Math.round(score)));
-}
-function averageWindow(hourlyTimes, values, fromDate, toDate){
-  if(!values) return null;
-  let sum=0, n=0;
-  hourlyTimes.forEach((t,i)=>{
-    const d = new Date(t);
-    if(d >= fromDate && d <= toDate && values[i] != null){ sum += values[i]; n++; }
-  });
-  return n>0 ? sum/n : null;
-}
-async function computeAllScores(){
-  const btn = document.getElementById('refreshScoresBtn');
-  btn.disabled = true;
-  btn.textContent = "Calcolo…";
-  for(const spot of SPOTS){
-    try{
-      const now = new Date();
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${spot.lat}&longitude=${spot.lon}&hourly=wind_speed_10m&forecast_days=1&timezone=auto`;
-      const murl = `https://marine-api.open-meteo.com/v1/marine?latitude=${spot.lat}&longitude=${spot.lon}&hourly=wave_height&forecast_days=1&timezone=auto`;
-      const wRes = await fetch(url);
-      const w = await wRes.json();
-      let waveVals = null, waveTimes = null;
-      try{
-        const mRes = await fetch(murl);
-        const m = await mRes.json();
-        if(m && m.hourly){ waveVals = m.hourly.wave_height; waveTimes = m.hourly.time; }
-      }catch(e){}
-
-      const sunTimes = SunCalc.getTimes(now, spot.lat, spot.lon);
-      const moonPhaseVal = moonPhase(now);
-
-      const amFrom = new Date(sunTimes.sunrise.getTime() - 60*60*1000);
-      const amTo = new Date(sunTimes.sunrise.getTime() + 3*60*60*1000);
-      const pmFrom = new Date(sunTimes.sunset.getTime() - 60*60*1000);
-      const pmTo = new Date(sunTimes.sunset.getTime() + 3*60*60*1000);
-
-      const amWind = averageWindow(w.hourly.time, w.hourly.wind_speed_10m, amFrom, amTo);
-      const pmWind = averageWindow(w.hourly.time, w.hourly.wind_speed_10m, pmFrom, pmTo);
-      const amWave = waveTimes ? averageWindow(waveTimes, waveVals, amFrom, amTo) : null;
-      const pmWave = waveTimes ? averageWindow(waveTimes, waveVals, pmFrom, pmTo) : null;
-
-      const amScore = windowScoreFromAverages(amWind, amWave, moonPhaseVal);
-      const pmScore = windowScoreFromAverages(pmWind, pmWave, moonPhaseVal);
-
-      const amCell = document.getElementById('score-am-'+spot.id);
-      const pmCell = document.getElementById('score-pm-'+spot.id);
-      if(amCell) amCell.innerHTML = scorePill(amScore);
-      if(pmCell) pmCell.innerHTML = scorePill(pmScore);
-    }catch(e){
-      const amCell = document.getElementById('score-am-'+spot.id);
-      const pmCell = document.getElementById('score-pm-'+spot.id);
-      if(amCell) amCell.innerHTML = '<span class="score-pill low">errore</span>';
-      if(pmCell) pmCell.innerHTML = '<span class="score-pill low">errore</span>';
-    }
-    await new Promise(r=>setTimeout(r, 150)); // piccola pausa tra le chiamate, per rispetto del servizio gratuito
-  }
-  btn.disabled = false;
-  btn.textContent = "Ricalcola punteggi";
-}
-document.getElementById('refreshScoresBtn').addEventListener('click', computeAllScores);
-
-/* ---------------------------------------------------------
-   TECNICHE DI PESCA (generiche, non legate a un luogo fisso)
+   TECNICHE & CALENDARIO
 --------------------------------------------------------- */
 const TECHNIQUES = [
-  {name:"Surfcasting", tag:"Da riva · spiaggia sabbiosa", desc:"Lanci lunghi da spiaggia con canna 4.20–4.50 m e piombo 100–150 g per raggiungere le buche oltre i frangenti.",
-    spec:"Dove: spiagge sabbiose con buche visibili a occhio o su carta batimetrica. Target tipico: orata, passera, spigola. Meglio con mare leggermente mosso e nelle ore notturne."},
-  {name:"Bolentino", tag:"Da barca · fondale misto", desc:"Pesca a fondo o a mezz'acqua con più ami innescati, adatta a fondali misti roccia-sabbia.",
-    spec:"Dove: secche, canali stretti e coste rocciose che scendono rapidamente. Target: occhiate, mormore, merluzzetti, saraghi. Meglio con poca corrente."},
-  {name:"Traina", tag:"Da barca · in movimento", desc:"Trascinare esche artificiali o naturali a velocità 3–6 nodi lungo secche, canali e correnti.",
-    spec:"Dove: canali tra isole, promontori con corrente, bordi di secche. Target: ricciola, palamita, lampuga, tonnetto. Meglio nelle prime ore del mattino."},
-  {name:"Spinning da scogliera", tag:"Da riva · roccia", desc:"Lancio e recupero di artificiali (minnow, popper, jig leggeri) lungo scogliere esposte, spostandosi lungo la costa.",
-    spec:"Dove: scogliere a picco sul mare con acqua profonda vicino a riva. Target: serra, spigola, leccia, occasionali ricciole. Alba e tramonto sempre produttivi."},
-  {name:"Bolognese / Feeder", tag:"Da riva · porto e foce", desc:"Canna con mulinello e galleggiante scorrevole (bolognese) o pasturatore (feeder) per pescare in porti canale e foci.",
-    spec:"Dove: porti, foci di fiumi, stagni salmastri. Target: cefalo, sarago, spigola, orata. Buona tecnica anche con mare mosso al largo."},
-  {name:"Eging", tag:"Da riva o barca · notturno", desc:"Pesca ai cefalopodi con totanare colorate, recupero a scatti (jerk) su fondali misti vicino a grotte e scogliere.",
-    spec:"Dove: calette, moli illuminati, fondali misti vicino a grotte. Target: totano, seppia, calamaro. Autunno-inverno per il totano, primavera per la seppia."},
+  {name:"Surfcasting", tag:"Da riva · spiaggia", desc:"Lanci a grande distanza oltre i frangenti con piombi da 100-175g.", spec:"Target: orata, spigola, mormora, sarago. Ideale con mareggiate in scaduta o nelle ore notturne."},
+  {name:"Bolentino", tag:"Da barca · roccia/misto", desc:"Pesca in verticale a fondo con terminale a più braccioli.", spec:"Target: saraghi, pagelli, orate, occhiate. Ottimo in presenza di corrente moderata su secche."},
+  {name:"Spinning costiero", tag:"Da riva · scogliera/foce", desc:"Lancio e recupero continuo di esche artificiali (minnow, jerk, popper).", spec:"Target: spigola, serra, leccia amia, barracuda. Massima resa all'alba, tramonto o cambi di luce."},
+  {name:"Traina costiera", tag:"Da barca · in moto", desc:"Avanzamento a 3-5 nodi trainando esche artificiali o aguglie vive.", spec:"Target: palamite, lampughe, tombarelli, ricciole. Rende sui cigli e salti di fondale."},
+  {name:"Bolognese / Feeder", tag:"Da riva · porto/scogliera", desc:"Canna lunga e galleggiante o pasturatore sul fondo con terminali sottili.", spec:"Target: cefalo, spigola, sarago, orata. Efficace nelle acque calme interne o porti canale."},
+  {name:"Eging (Cefalopodi)", tag:"Da riva o barca", desc:"Pesca mirata a totani, calamari e seppie con totanare artificiali.", spec:"Target: seppia (primavera/autunno), calamaro e totano (autunno/inverno nelle ore buie)."}
 ];
+
 function renderTechniques(){
   const grid = document.getElementById('techGrid');
   grid.innerHTML = TECHNIQUES.map((t,i)=>`
@@ -1646,9 +1959,6 @@ function renderTechniques(){
   });
 }
 
-/* ---------------------------------------------------------
-   CALENDARIO SPECIE (indicativo, Mediterraneo)
---------------------------------------------------------- */
 const MONTHS = ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
 const SPECIES = [
   {name:"Orata", data:[0,0,1,1,1,1,1,1,2,2,1,0]},
@@ -1658,10 +1968,10 @@ const SPECIES = [
   {name:"Ricciola", data:[1,1,1,1,2,2,2,1,1,1,1,1]},
   {name:"Palamita", data:[0,0,0,0,1,2,2,1,1,0,0,0]},
   {name:"Lampuga", data:[0,0,0,0,0,0,0,1,2,2,1,0]},
-  {name:"Totano", data:[2,2,1,0,0,0,0,0,0,1,2,2]},
-  {name:"Seppia", data:[1,2,2,1,0,0,0,0,0,0,1,1]},
-  {name:"Tonno rosso (passo)", data:[0,0,0,0,2,2,1,0,0,0,0,0]},
+  {name:"Totano / Calamaro", data:[2,2,1,0,0,0,0,0,0,1,2,2]},
+  {name:"Seppia", data:[1,2,2,1,0,0,0,0,0,0,1,1]}
 ];
+
 function renderCalendar(){
   const table = document.getElementById('calTable');
   let thead = "<thead><tr><th>Specie</th>" + MONTHS.map(m=>`<th>${m}</th>`).join('') + "</tr></thead>";
@@ -1677,7 +1987,7 @@ function renderCalendar(){
 }
 
 /* ---------------------------------------------------------
-   INIT
+   INIZIALIZZAZIONE
 --------------------------------------------------------- */
 renderTechniques();
 renderCalendar();
