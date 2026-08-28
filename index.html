@@ -547,7 +547,7 @@
   .map-toolbar{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px;}
   .map-toolbar .hint-inline{font-size:0.76rem; color:rgba(245,241,230,0.55); font-family:'IBM Plex Mono',monospace; flex:1; min-width:180px;}
   #map{height:460px; width:100%; border:1px solid var(--line-strong); border-radius:4px; cursor:crosshair;}
-  #map .osm-base-tile{filter:invert(94%) hue-rotate(180deg) brightness(0.95) contrast(0.88) saturate(0.9);}
+  #map .osm-base-tile{filter:brightness(0.8) saturate(1.05) contrast(1.05);}
   #map .leaflet-control-layers{
     background:var(--navy-mid); color:var(--foam); border:1px solid var(--line-strong);
     font-family:'Inter',sans-serif; font-size:0.78rem; padding:8px 10px;
@@ -884,7 +884,7 @@
         <div class="section-head" style="margin-top:0; padding-top:0;">
           <div class="eyebrow">Carta nautica</div>
           <h2>La tua mappa</h2>
-          <p>Usa la rotellina del mouse per zoomare. Clicca sulla carta per leggere la profondità del fondale. Trascina un punto per spostarlo. Puoi attivare i livelli di batimetria ad alta risoluzione (EMODnet/GEBCO) e la segnaletica OpenSeaMap.</p>
+          <p>Usa la rotellina del mouse per zoomare. Clicca sulla carta per leggere la profondità del fondale. Trascina un punto per spostarlo. La base è una carta nautica (fondali e coste, niente strade o edifici): puoi attivare boe, fari e relitti (OpenSeaMap), nomi di mari e sonde (Esri Ocean Reference) e la batimetria a colori EMODnet.</p>
         </div>
         <div id="mapWrap">
           <div class="map-toolbar">
@@ -894,7 +894,7 @@
           <div id="map"></div>
           <div class="depth-readout" id="depthReadout" hidden></div>
         </div>
-        <div class="map-note">© OpenStreetMap contributors · geocoding e dati meteomarini © Open-Meteo.com — nessuna chiave API richiesta</div>
+        <div class="map-note">Carta nautica © Esri, GEBCO, NOAA · boe/fari/relitti © OpenSeaMap · batimetria © EMODnet · geocoding e dati meteomarini © Open-Meteo.com — nessuna chiave API richiesta</div>
 
         <div class="spot-info" id="spotInfo"></div>
       </section>
@@ -923,7 +923,7 @@
     </main>
 
     <footer class="wrap">
-      Progetto indipendente senza fini di lucro. Dati meteo e marini: <a href="https://open-meteo.com" target="_blank">Open-Meteo.com</a>. Mappe e batimetria: <a href="https://www.openstreetmap.org" target="_blank">OSM</a>, <a href="https://emodnet.ec.europa.eu" target="_blank">EMODnet</a>, <a href="https://www.gebco.net" target="_blank">GEBCO</a>, <a href="https://www.openseamap.org" target="_blank">OpenSeaMap</a>. Effemeridi: <a href="https://github.com/mourner/suncalc" target="_blank">SunCalc</a>. I tuoi spot rimangono salvati esclusivamente nel localStorage di questo browser.
+      Progetto indipendente senza fini di lucro. Dati meteo e marini: <a href="https://open-meteo.com" target="_blank">Open-Meteo.com</a>. Carta nautica e batimetria: <a href="https://www.esri.com" target="_blank">Esri Ocean Basemap</a> (GEBCO/NOAA), <a href="https://emodnet.ec.europa.eu" target="_blank">EMODnet</a>, <a href="https://www.gebco.net" target="_blank">GEBCO</a>, <a href="https://www.openseamap.org" target="_blank">OpenSeaMap</a>. Effemeridi: <a href="https://github.com/mourner/suncalc" target="_blank">SunCalc</a>. I tuoi spot rimangono salvati esclusivamente nel localStorage di questo browser.
     </footer>
   </div>
 </div>
@@ -2228,29 +2228,37 @@ let map, markers = {};
 function initMap(){
   map = L.map('map', {scrollWheelZoom: true}).setView([42.5, 12.5], 5);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors',
-    maxZoom: 19,
-    subdomains: 'abc',
+  // Base nautica: rilievo del fondale e coste, senza la rete stradale/urbana di terra
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Esri, GEBCO, NOAA, National Geographic, DeLorme, HERE, Geonames.org',
+    maxZoom: 16,
     className: 'osm-base-tile'
+  }).addTo(map);
+
+  // Riferimenti marini: nomi di mari/canali, sonde di profondità, porti — niente etichette di terra
+  const oceanReference = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Esri Ocean Reference',
+    maxZoom: 16,
+    opacity: 0.9
   }).addTo(map);
 
   const emodnetBathy = L.tileLayer.wms('https://ows.emodnet-bathymetry.eu/wms', {
     layers: 'mean_rainbowcolour',
     format: 'image/png',
     transparent: true,
-    opacity: 0.6,
+    opacity: 0.55,
     attribution: 'EMODnet Bathymetry'
-  }).addTo(map);
+  });
 
   const seamarks = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
     attribution: 'OpenSeaMap contributors',
     maxZoom: 18
-  });
+  }).addTo(map);
 
   L.control.layers(null, {
-    "Batimetria EMODnet (Europa)": emodnetBathy,
-    "Boe e segnaletica (OpenSeaMap)": seamarks
+    "Nomi mari, sonde e porti (Esri Ocean Reference)": oceanReference,
+    "Boe, fari, relitti e canali (OpenSeaMap)": seamarks,
+    "Batimetria a colori EMODnet (solo Europa)": emodnetBathy
   }, {collapsed:false}).addTo(map);
 
   map.on('click', async e=>{
