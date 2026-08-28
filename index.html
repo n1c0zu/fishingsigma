@@ -1138,18 +1138,53 @@ function refreshFromFilters(){
 /* ---------------------------------------------------------
    CALCOLO INDICE PESCA EURISTICO
 --------------------------------------------------------- */
-function calculateFishingScore(wind, wave, pressureTrend, phase){
+function calculateFishingScore(wind, wave, pressureTrend, phase, extra){
+  extra = extra || {};
+  const cloud = extra.cloud;       // % copertura nuvolosa (0-100)
+  const current = extra.current;   // velocità corrente km/h
+
   let score = 100;
-  if(wind != null) score -= Math.min(45, wind * 2.2);
-  if(wave != null) score -= Math.min(25, wave * 22);
+
+  // Vento: soglia di saturazione più realistica (prima azzerava già a ~20 km/h)
+  if(wind != null) score -= Math.min(40, wind * 1.7);
+
+  // Moto ondoso: idem, satura più tardi
+  if(wave != null) score -= Math.min(22, wave * 18);
+
+  // Pressione: penalizza l'INSTABILITÀ (variazioni forti in entrambe le direzioni,
+  // sintomo di fronte in transito = pesce meno attivo), premia la stabilità.
+  // Non prende posizione sul dibattito "cala bene / sale bene", che non ha
+  // consenso empirico forte.
   if(pressureTrend != null){
-    if(pressureTrend < -1.2) score -= 12;
-    else if(pressureTrend > 0.8) score += 6;
+    const swing = Math.abs(pressureTrend);
+    if(swing > 3) score -= 14;        // fronte in arrivo/passaggio: instabile
+    else if(swing > 1.5) score -= 6;  // variazione moderata
+    else score += 4;                  // pressione stabile: condizione tipicamente favorevole
   }
+
+  // Luna: boost pieno su novilunio/plenilunio (marea viva), boost ridotto sui quarti
   if(phase != null){
-    const moonBoost = (phase < 0.06 || phase > 0.94 || (phase > 0.46 && phase < 0.54)) ? 10 : 0;
-    score += moonBoost;
+    const nearNewOrFull = (phase < 0.06 || phase > 0.94 || (phase > 0.46 && phase < 0.54));
+    const nearQuarter = (phase > 0.20 && phase < 0.30) || (phase > 0.70 && phase < 0.80);
+    if(nearNewOrFull) score += 10;
+    else if(nearQuarter) score += 4;
   }
+
+  // Nuvolosità: cielo velato/coperto spesso favorisce l'attività di superficie
+  // (luce diffusa, meno pesce "spaventato"); sole a picco o cielo totalmente
+  // coperto con maltempo associato sono leggermente meno favorevoli.
+  if(cloud != null){
+    if(cloud >= 35 && cloud <= 85) score += 5;
+    else if(cloud < 10) score -= 3; // cielo completamente sereno, luce dura
+  }
+
+  // Corrente: un minimo di flusso stimola l'attività alimentare; una corrente
+  // troppo forte rende la pesca difficile (deriva, difficoltà di tenuta fondo)
+  if(current != null){
+    if(current >= 0.5 && current <= 2.5) score += 5;
+    else if(current > 4) score -= 8;
+  }
+
   return Math.max(5, Math.min(100, Math.round(score)));
 }
 
@@ -1494,7 +1529,7 @@ function renderDashboard(spot, weather, marine){
 
   const phase = moonPhase(ref);
   const illumination = Math.round((1 - Math.cos(phase * 2 * Math.PI)) / 2 * 100);
-  const score = calculateFishingScore(wind, wave, pressureTrend, phase);
+  const score = calculateFishingScore(wind, wave, pressureTrend, phase, {cloud, current: currentVel});
   const scoreText = scoreBadgeText(score);
 
   const trendArrow = pressureTrend > 1 ? "↗" : (pressureTrend < -1 ? "↘" : "→");
@@ -1853,14 +1888,16 @@ function renderDayDetail(spot, weather, marine, dateVal){
   const amTemp = avgWindow(h.temperature_2m, amFrom, amTo);
   const amWave = avgWaveWindow(amFrom, amTo);
   const amCurrent = avgCurrentWindow(amFrom, amTo);
-  const amScore = calculateFishingScore(amWind, amWave, 0, dayPhase);
+  const amCloud = h.cloud_cover ? avgWindow(h.cloud_cover, amFrom, amTo) : null;
+  const amScore = calculateFishingScore(amWind, amWave, 0, dayPhase, {cloud: amCloud, current: amCurrent});
 
   const pmWind = avgWindow(h.wind_speed_10m, pmFrom, pmTo);
   const pmGust = avgWindow(h.wind_gusts_10m, pmFrom, pmTo);
   const pmTemp = avgWindow(h.temperature_2m, pmFrom, pmTo);
   const pmWave = avgWaveWindow(pmFrom, pmTo);
   const pmCurrent = avgCurrentWindow(pmFrom, pmTo);
-  const pmScore = calculateFishingScore(pmWind, pmWave, 0, dayPhase);
+  const pmCloud = h.cloud_cover ? avgWindow(h.cloud_cover, pmFrom, pmTo) : null;
+  const pmScore = calculateFishingScore(pmWind, pmWave, 0, dayPhase, {cloud: pmCloud, current: pmCurrent});
 
   dayContainer.innerHTML = `
     <div class="day-windows-grid">
@@ -1932,7 +1969,8 @@ function renderDayDetail(spot, weather, marine, dateVal){
     const currentDir = marineValueNear(marine,'ocean_current_direction', t);
     const pTrend = (i >= 3) ? (h.pressure_msl[i] - h.pressure_msl[i-3]) : 0;
     const hourPhase = moonPhase(new Date(t));
-    const hScore = calculateFishingScore(h.wind_speed_10m[i], wave, pTrend, hourPhase);
+    const hCloud = h.cloud_cover ? h.cloud_cover[i] : null;
+    const hScore = calculateFishingScore(h.wind_speed_10m[i], wave, pTrend, hourPhase, {cloud: hCloud, current: currentVel});
 
     return `<tr>
       <td class="mono"><strong>${t.slice(11,16)}</strong></td>
@@ -2119,14 +2157,6 @@ function initMap(){
     attribution: 'EMODnet Bathymetry'
   }).addTo(map);
 
-  const gebcoBathy = L.tileLayer.wms('https://wms.gebco.net/mapserv', {
-    layers: 'GEBCO_LATEST',
-    format: 'image/png',
-    transparent: true,
-    opacity: 0.55,
-    attribution: 'GEBCO'
-  });
-
   const seamarks = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
     attribution: 'OpenSeaMap contributors',
     maxZoom: 18
@@ -2134,7 +2164,6 @@ function initMap(){
 
   L.control.layers(null, {
     "Batimetria EMODnet (Europa)": emodnetBathy,
-    "Batimetria GEBCO (globale)": gebcoBathy,
     "Boe e segnaletica (OpenSeaMap)": seamarks
   }, {collapsed:false}).addTo(map);
 
