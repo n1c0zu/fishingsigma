@@ -543,7 +543,7 @@
   .section-head p{color:rgba(245,241,230,0.65); margin-top:6px; font-size:0.9rem;}
 
   /* mappa */
-  #mapWrap{position:relative;}
+  #mapWrap{position:relative; z-index:0; isolation:isolate;}
   .map-toolbar{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px;}
   .map-toolbar .hint-inline{font-size:0.76rem; color:rgba(245,241,230,0.55); font-family:'IBM Plex Mono',monospace; flex:1; min-width:180px;}
   #map{height:460px; width:100%; border:1px solid var(--line-strong); border-radius:4px; cursor:crosshair;}
@@ -2117,7 +2117,7 @@ function initMap(){
     transparent: true,
     opacity: 0.6,
     attribution: 'EMODnet Bathymetry'
-  });
+  }).addTo(map);
 
   const gebcoBathy = L.tileLayer.wms('https://wms.gebco.net/mapserv', {
     layers: 'GEBCO_LATEST',
