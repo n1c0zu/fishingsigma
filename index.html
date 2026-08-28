@@ -1142,6 +1142,8 @@ function calculateFishingScore(wind, wave, pressureTrend, phase, extra){
   extra = extra || {};
   const cloud = extra.cloud;       // % copertura nuvolosa (0-100)
   const current = extra.current;   // velocità corrente km/h
+  const hoursFromTransition = extra.hoursFromTransition; // ore dalla alba/tramonto più vicina
+  const isDaytime = extra.isDaytime;
 
   let score = 100;
 
@@ -1185,7 +1187,29 @@ function calculateFishingScore(wind, wave, pressureTrend, phase, extra){
     else if(current > 4) score -= 8;
   }
 
+  // Prossimità ad alba/tramonto: è il fattore più determinante per l'attività
+  // di quasi tutte le specie. Vicino alla transizione = finestra migliore;
+  // pieno giorno lontano da alba/tramonto (es. mezzogiorno con sole alto) =
+  // penalità marcata; piena notte lontana dalle transizioni = penalità lieve
+  // (alcune tecniche, es. eging notturno, restano valide).
+  if(hoursFromTransition != null){
+    if(hoursFromTransition <= 1) score += 12;
+    else if(hoursFromTransition <= 2.5) score += 5;
+    else if(isDaytime) score -= 14;
+    else score -= 4;
+  }
+
   return Math.max(5, Math.min(100, Math.round(score)));
+}
+
+function sunProximityInfo(date, sunTimes){
+  if(!sunTimes || !sunTimes.sunrise || !sunTimes.sunset || isNaN(sunTimes.sunrise) || isNaN(sunTimes.sunset)){
+    return {hoursFromTransition: null, isDaytime: null};
+  }
+  const hToSunrise = Math.abs(date - sunTimes.sunrise) / 3600000;
+  const hToSunset = Math.abs(date - sunTimes.sunset) / 3600000;
+  const isDaytime = date > sunTimes.sunrise && date < sunTimes.sunset;
+  return {hoursFromTransition: Math.min(hToSunrise, hToSunset), isDaytime};
 }
 
 function scorePill(score){
@@ -1529,7 +1553,10 @@ function renderDashboard(spot, weather, marine){
 
   const phase = moonPhase(ref);
   const illumination = Math.round((1 - Math.cos(phase * 2 * Math.PI)) / 2 * 100);
-  const score = calculateFishingScore(wind, wave, pressureTrend, phase, {cloud, current: currentVel});
+  const sunProx = (typeof SunCalc !== 'undefined')
+    ? sunProximityInfo(ref, SunCalc.getTimes(ref, spot.lat, spot.lon))
+    : {hoursFromTransition: null, isDaytime: null};
+  const score = calculateFishingScore(wind, wave, pressureTrend, phase, {cloud, current: currentVel, hoursFromTransition: sunProx.hoursFromTransition, isDaytime: sunProx.isDaytime});
   const scoreText = scoreBadgeText(score);
 
   const trendArrow = pressureTrend > 1 ? "↗" : (pressureTrend < -1 ? "↘" : "→");
@@ -1812,8 +1839,8 @@ function renderOutlook7(spot, weather, marine){
     const amWave = avgWaveInWindow(amFrom, amTo);
     const pmWave = avgWaveInWindow(pmFrom, pmTo);
 
-    const amScore = calculateFishingScore(amWind, amWave, 0, dayPhase);
-    const pmScore = calculateFishingScore(pmWind, pmWave, 0, dayPhase);
+    const amScore = calculateFishingScore(amWind, amWave, 0, dayPhase, {hoursFromTransition: 0.5, isDaytime: true});
+    const pmScore = calculateFishingScore(pmWind, pmWave, 0, dayPhase, {hoursFromTransition: 0.5, isDaytime: true});
 
     let hIdx = h.time.findIndex(t => t.startsWith(dayStr) && t.endsWith("13:00"));
     if(hIdx < 0) hIdx = h.time.findIndex(t => t.startsWith(dayStr));
@@ -1889,7 +1916,7 @@ function renderDayDetail(spot, weather, marine, dateVal){
   const amWave = avgWaveWindow(amFrom, amTo);
   const amCurrent = avgCurrentWindow(amFrom, amTo);
   const amCloud = h.cloud_cover ? avgWindow(h.cloud_cover, amFrom, amTo) : null;
-  const amScore = calculateFishingScore(amWind, amWave, 0, dayPhase, {cloud: amCloud, current: amCurrent});
+  const amScore = calculateFishingScore(amWind, amWave, 0, dayPhase, {cloud: amCloud, current: amCurrent, hoursFromTransition: 0.5, isDaytime: true});
 
   const pmWind = avgWindow(h.wind_speed_10m, pmFrom, pmTo);
   const pmGust = avgWindow(h.wind_gusts_10m, pmFrom, pmTo);
@@ -1897,7 +1924,7 @@ function renderDayDetail(spot, weather, marine, dateVal){
   const pmWave = avgWaveWindow(pmFrom, pmTo);
   const pmCurrent = avgCurrentWindow(pmFrom, pmTo);
   const pmCloud = h.cloud_cover ? avgWindow(h.cloud_cover, pmFrom, pmTo) : null;
-  const pmScore = calculateFishingScore(pmWind, pmWave, 0, dayPhase, {cloud: pmCloud, current: pmCurrent});
+  const pmScore = calculateFishingScore(pmWind, pmWave, 0, dayPhase, {cloud: pmCloud, current: pmCurrent, hoursFromTransition: 0.5, isDaytime: true});
 
   dayContainer.innerHTML = `
     <div class="day-windows-grid">
@@ -1970,7 +1997,8 @@ function renderDayDetail(spot, weather, marine, dateVal){
     const pTrend = (i >= 3) ? (h.pressure_msl[i] - h.pressure_msl[i-3]) : 0;
     const hourPhase = moonPhase(new Date(t));
     const hCloud = h.cloud_cover ? h.cloud_cover[i] : null;
-    const hScore = calculateFishingScore(h.wind_speed_10m[i], wave, pTrend, hourPhase, {cloud: hCloud, current: currentVel});
+    const hSunProx = sunProximityInfo(new Date(t), sunTimes);
+    const hScore = calculateFishingScore(h.wind_speed_10m[i], wave, pTrend, hourPhase, {cloud: hCloud, current: currentVel, hoursFromTransition: hSunProx.hoursFromTransition, isDaytime: hSunProx.isDaytime});
 
     return `<tr>
       <td class="mono"><strong>${t.slice(11,16)}</strong></td>
@@ -2115,8 +2143,8 @@ async function computeAllScores(){
       const amWave = avgWindow(waveTimes, waveVals, amFrom, amTo);
       const pmWave = avgWindow(waveTimes, waveVals, pmFrom, pmTo);
 
-      const amScore = calculateFishingScore(amWind, amWave, 0, dayPhase);
-      const pmScore = calculateFishingScore(pmWind, pmWave, 0, dayPhase);
+      const amScore = calculateFishingScore(amWind, amWave, 0, dayPhase, {hoursFromTransition: 0.5, isDaytime: true});
+      const pmScore = calculateFishingScore(pmWind, pmWave, 0, dayPhase, {hoursFromTransition: 0.5, isDaytime: true});
 
       const amCell = document.getElementById('score-am-'+spot.id);
       const pmCell = document.getElementById('score-pm-'+spot.id);
