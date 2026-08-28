@@ -547,7 +547,7 @@
   .map-toolbar{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px;}
   .map-toolbar .hint-inline{font-size:0.76rem; color:rgba(245,241,230,0.55); font-family:'IBM Plex Mono',monospace; flex:1; min-width:180px;}
   #map{height:460px; width:100%; border:1px solid var(--line-strong); border-radius:4px; cursor:crosshair;}
-  #map .osm-base-tile{filter:brightness(0.8) saturate(1.05) contrast(1.05);}
+  #map .osm-base-tile{filter:invert(94%) hue-rotate(180deg) brightness(0.95) contrast(0.88) saturate(0.9);}
   #map .leaflet-control-layers{
     background:var(--navy-mid); color:var(--foam); border:1px solid var(--line-strong);
     font-family:'Inter',sans-serif; font-size:0.78rem; padding:8px 10px;
@@ -572,6 +572,14 @@
     font-size:0.82rem; pointer-events:none;
   }
   #mapWrap:fullscreen .depth-readout, #mapWrap.is-fullscreen .depth-readout{bottom:24px;}
+  .measure-readout{left:auto; right:12px; bottom:auto; top:12px;}
+  #mapWrap:fullscreen .measure-readout, #mapWrap.is-fullscreen .measure-readout{top:24px;}
+  .measure-readout .btn-mini{
+    pointer-events:auto; margin-left:10px; background:transparent; border:1px solid var(--line-strong);
+    color:var(--foam); font-family:'IBM Plex Mono',monospace; font-size:0.68rem; padding:2px 8px;
+    border-radius:3px; cursor:pointer;
+  }
+  .measure-readout .btn-mini:hover{border-color:var(--rust); color:var(--rust);}
   .spot-marker{background:transparent; border:none;}
   .spot-marker span{
     display:block; width:14px; height:14px; border-radius:50%;
@@ -884,17 +892,19 @@
         <div class="section-head" style="margin-top:0; padding-top:0;">
           <div class="eyebrow">Carta nautica</div>
           <h2>La tua mappa</h2>
-          <p>Usa la rotellina del mouse per zoomare. Clicca sulla carta per leggere la profondità del fondale. Trascina un punto per spostarlo. La base è una carta nautica (fondali e coste, niente strade o edifici): puoi attivare boe, fari e relitti (OpenSeaMap), nomi di mari e sonde (Esri Ocean Reference) e la batimetria a colori EMODnet.</p>
+          <p>Usa la rotellina del mouse per zoomare. Clicca sulla carta per leggere la profondità del fondale. Trascina un punto per spostarlo. La batimetria EMODnet è sempre attiva; puoi aggiungere la segnaletica di boe, fari e relitti (OpenSeaMap) e misurare le distanze in mare con l'apposito righello.</p>
         </div>
         <div id="mapWrap">
           <div class="map-toolbar">
             <button class="btn-outline" id="fullscreenBtn" type="button">Schermo intero</button>
-            <span class="hint-inline">Zoom: rotellina mouse · Clic: profondità · Trascina: sposta spot</span>
+            <button class="btn-outline" id="measureToggle" type="button">Misura distanza</button>
+            <span class="hint-inline">Zoom: rotellina mouse · Clic: profondità · Trascina: sposta spot · Misura: clic multipli sulla carta</span>
           </div>
           <div id="map"></div>
           <div class="depth-readout" id="depthReadout" hidden></div>
+          <div class="depth-readout measure-readout" id="measureReadout" hidden></div>
         </div>
-        <div class="map-note">Carta nautica © Esri, GEBCO, NOAA · boe/fari/relitti © OpenSeaMap · batimetria © EMODnet · geocoding e dati meteomarini © Open-Meteo.com — nessuna chiave API richiesta</div>
+        <div class="map-note">© OpenStreetMap contributors · boe/fari/relitti © OpenSeaMap · batimetria © EMODnet · geocoding e dati meteomarini © Open-Meteo.com — nessuna chiave API richiesta</div>
 
         <div class="spot-info" id="spotInfo"></div>
       </section>
@@ -923,7 +933,7 @@
     </main>
 
     <footer class="wrap">
-      Progetto indipendente senza fini di lucro. Dati meteo e marini: <a href="https://open-meteo.com" target="_blank">Open-Meteo.com</a>. Carta nautica e batimetria: <a href="https://www.esri.com" target="_blank">Esri Ocean Basemap</a> (GEBCO/NOAA), <a href="https://emodnet.ec.europa.eu" target="_blank">EMODnet</a>, <a href="https://www.gebco.net" target="_blank">GEBCO</a>, <a href="https://www.openseamap.org" target="_blank">OpenSeaMap</a>. Effemeridi: <a href="https://github.com/mourner/suncalc" target="_blank">SunCalc</a>. I tuoi spot rimangono salvati esclusivamente nel localStorage di questo browser.
+      Progetto indipendente senza fini di lucro. Dati meteo e marini: <a href="https://open-meteo.com" target="_blank">Open-Meteo.com</a>. Mappe e batimetria: <a href="https://www.openstreetmap.org" target="_blank">OSM</a>, <a href="https://emodnet.ec.europa.eu" target="_blank">EMODnet</a>, <a href="https://www.gebco.net" target="_blank">GEBCO</a>, <a href="https://www.openseamap.org" target="_blank">OpenSeaMap</a>. Effemeridi: <a href="https://github.com/mourner/suncalc" target="_blank">SunCalc</a>. I tuoi spot rimangono salvati esclusivamente nel localStorage di questo browser.
     </footer>
   </div>
 </div>
@@ -935,6 +945,10 @@
 let SPOTS = [];
 let currentSpot = null;
 let mapAddMode = false;
+let measureMode = false;
+let measurePoints = [];
+let measureLine = null;
+let measureMarkersLayer = null;
 let lastWeather = null, lastMarine = null;
 let editingSpotId = null;
 const STORAGE_KEY = "lenza_spots_v1";
@@ -1416,6 +1430,7 @@ document.getElementById('mapAddToggle').addEventListener('click', function(){
   this.classList.toggle('active', mapAddMode);
   this.textContent = mapAddMode ? "Clicca sulla mappa…" : "Aggiungi dalla mappa";
   if(mapAddMode){
+    if(measureMode) toggleMeasureMode();
     if(isMobileScreen()) closeSidebar();
     const mapSection = document.getElementById('mappa-section');
     if(mapSection){
@@ -1432,6 +1447,78 @@ document.getElementById('locateBtn').addEventListener('click', ()=>{
     openAddForm(latitude, longitude, "La mia posizione");
   }, ()=> alert("Impossibile recuperare la posizione."));
 });
+
+/* ---------------------------------------------------------
+   MISURATORE DI DISTANZA SULLA CARTA
+--------------------------------------------------------- */
+function toggleMeasureMode(){
+  measureMode = !measureMode;
+  const btn = document.getElementById('measureToggle');
+  btn.classList.toggle('active', measureMode);
+  btn.textContent = measureMode ? "Clicca per misurare…" : "Misura distanza";
+  if(measureMode){
+    if(mapAddMode){
+      mapAddMode = false;
+      const addBtn = document.getElementById('mapAddToggle');
+      addBtn.classList.remove('active');
+      addBtn.textContent = "Aggiungi dalla mappa";
+    }
+    if(isMobileScreen()) closeSidebar();
+    const mapSection = document.getElementById('mappa-section');
+    if(mapSection) mapSection.scrollIntoView({behavior:'smooth', block:'start'});
+  } else {
+    clearMeasure();
+  }
+}
+
+function addMeasurePoint(latlng){
+  measurePoints.push(latlng);
+  if(!measureLine){
+    measureLine = L.polyline(measurePoints, {color:'#d9622b', weight:2, dashArray:'6,5'}).addTo(map);
+  } else {
+    measureLine.setLatLngs(measurePoints);
+  }
+  if(!measureMarkersLayer) measureMarkersLayer = L.layerGroup().addTo(map);
+  measureMarkersLayer.addLayer(
+    L.circleMarker(latlng, {radius:4, weight:2, color:'#d9622b', fillColor:'#f5f1e6', fillOpacity:1})
+  );
+  updateMeasureReadout();
+}
+
+function updateMeasureReadout(){
+  const box = document.getElementById('measureReadout');
+  if(measurePoints.length < 2){
+    if(measurePoints.length === 1){
+      box.hidden = false;
+      box.innerHTML = `<span class="mono">Clicca un secondo punto per misurare…</span>`;
+    } else {
+      box.hidden = true;
+    }
+    return;
+  }
+  let totalM = 0;
+  for(let i=1;i<measurePoints.length;i++){
+    totalM += measurePoints[i-1].distanceTo(measurePoints[i]);
+  }
+  const km = (totalM/1000).toFixed(2);
+  const nm = (totalM/1852).toFixed(2);
+  box.hidden = false;
+  box.innerHTML = `<strong>Distanza:</strong> ${km} km · ${nm} nm<button id="measureClearBtn" class="btn-mini" type="button">Cancella</button>`;
+  document.getElementById('measureClearBtn').addEventListener('click', (ev)=>{
+    ev.stopPropagation();
+    clearMeasure();
+  });
+}
+
+function clearMeasure(){
+  measurePoints = [];
+  if(measureLine){ map.removeLayer(measureLine); measureLine = null; }
+  if(measureMarkersLayer){ map.removeLayer(measureMarkersLayer); measureMarkersLayer = null; }
+  const box = document.getElementById('measureReadout');
+  if(box){ box.hidden = true; box.innerHTML = ''; }
+}
+
+document.getElementById('measureToggle').addEventListener('click', toggleMeasureMode);
 
 /* ---------------------------------------------------------
    LISTA CHIP / SELEZIONE SPOT
@@ -2228,27 +2315,20 @@ let map, markers = {};
 function initMap(){
   map = L.map('map', {scrollWheelZoom: true}).setView([42.5, 12.5], 5);
 
-  // Base nautica: rilievo del fondale e coste, senza la rete stradale/urbana di terra
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Esri, GEBCO, NOAA, National Geographic, DeLorme, HERE, Geonames.org',
-    maxZoom: 16,
+  L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 19,
+    subdomains: 'abc',
     className: 'osm-base-tile'
-  }).addTo(map);
-
-  // Riferimenti marini: nomi di mari/canali, sonde di profondità, porti — niente etichette di terra
-  const oceanReference = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Esri Ocean Reference',
-    maxZoom: 16,
-    opacity: 0.9
   }).addTo(map);
 
   const emodnetBathy = L.tileLayer.wms('https://ows.emodnet-bathymetry.eu/wms', {
     layers: 'mean_rainbowcolour',
     format: 'image/png',
     transparent: true,
-    opacity: 0.55,
+    opacity: 0.6,
     attribution: 'EMODnet Bathymetry'
-  });
+  }).addTo(map);
 
   const seamarks = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
     attribution: 'OpenSeaMap contributors',
@@ -2256,12 +2336,15 @@ function initMap(){
   }).addTo(map);
 
   L.control.layers(null, {
-    "Nomi mari, sonde e porti (Esri Ocean Reference)": oceanReference,
-    "Boe, fari, relitti e canali (OpenSeaMap)": seamarks,
-    "Batimetria a colori EMODnet (solo Europa)": emodnetBathy
+    "Batimetria EMODnet (Europa)": emodnetBathy,
+    "Boe, fari e relitti (OpenSeaMap)": seamarks
   }, {collapsed:false}).addTo(map);
 
   map.on('click', async e=>{
+    if(measureMode){
+      addMeasurePoint(e.latlng);
+      return;
+    }
     if(mapAddMode){
       openAddForm(e.latlng.lat, e.latlng.lng, "");
       mapAddMode = false;
