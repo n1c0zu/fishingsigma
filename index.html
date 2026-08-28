@@ -2142,10 +2142,9 @@ let map, markers = {};
 function initMap(){
   map = L.map('map', {scrollWheelZoom: true}).setView([42.5, 12.5], 5);
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
     maxZoom: 19,
-    subdomains: 'abcd',
     className: 'osm-base-tile'
   }).addTo(map);
 
