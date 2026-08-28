@@ -904,7 +904,7 @@
           <div class="depth-readout" id="depthReadout" hidden></div>
           <div class="depth-readout measure-readout" id="measureReadout" hidden></div>
         </div>
-        <div class="map-note">© OpenStreetMap contributors · boe/fari/relitti © OpenSeaMap · batimetria © EMODnet · geocoding e dati meteomarini © Open-Meteo.com — nessuna chiave API richiesta</div>
+        <div class="map-note">© OpenStreetMap / CARTO · boe/fari/relitti © OpenSeaMap · batimetria © EMODnet · geocoding e dati meteomarini © Open-Meteo.com — nessuna chiave API richiesta</div>
 
         <div class="spot-info" id="spotInfo"></div>
       </section>
@@ -933,7 +933,7 @@
     </main>
 
     <footer class="wrap">
-      Progetto indipendente senza fini di lucro. Dati meteo e marini: <a href="https://open-meteo.com" target="_blank">Open-Meteo.com</a>. Mappe e batimetria: <a href="https://www.openstreetmap.org" target="_blank">OSM</a>, <a href="https://emodnet.ec.europa.eu" target="_blank">EMODnet</a>, <a href="https://www.gebco.net" target="_blank">GEBCO</a>, <a href="https://www.openseamap.org" target="_blank">OpenSeaMap</a>. Effemeridi: <a href="https://github.com/mourner/suncalc" target="_blank">SunCalc</a>. I tuoi spot rimangono salvati esclusivamente nel localStorage di questo browser.
+      Progetto indipendente senza fini di lucro. Dati meteo e marini: <a href="https://open-meteo.com" target="_blank">Open-Meteo.com</a>. Mappe e batimetria: <a href="https://www.openstreetmap.org" target="_blank">OSM</a> / <a href="https://carto.com" target="_blank">CARTO</a>, <a href="https://emodnet.ec.europa.eu" target="_blank">EMODnet</a>, <a href="https://www.gebco.net" target="_blank">GEBCO</a>, <a href="https://www.openseamap.org" target="_blank">OpenSeaMap</a>. Effemeridi: <a href="https://github.com/mourner/suncalc" target="_blank">SunCalc</a>. I tuoi spot rimangono salvati esclusivamente nel localStorage di questo browser.
     </footer>
   </div>
 </div>
@@ -2315,10 +2315,10 @@ let map, markers = {};
 function initMap(){
   map = L.map('map', {scrollWheelZoom: true}).setView([42.5, 12.5], 5);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors',
-    maxZoom: 19,
-    subdomains: 'abc',
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+    maxZoom: 20,
+    subdomains: 'abcd',
     className: 'osm-base-tile'
   }).addTo(map);
 
