@@ -1221,20 +1221,43 @@ function currentFavorability(current){
 
 function calculateFishingScore(wind, wave, pressureTrend, phase, extra){
   extra = extra || {};
-  const factors = [
+
+  // Fattori LIMITANTI: se uno di questi è pessimo, l'uscita è compromessa a
+  // prescindere da quanto siano buoni gli altri (es. mezzogiorno pieno sole,
+  // o mare formato, "cancellano" l'effetto di condizioni altrimenti ottime).
+  const limiting = [
     {value: windFavorability(wind), weight: 0.20},
     {value: waveFavorability(wave), weight: 0.15},
     {value: lightFavorability(extra.hoursFromTransition, extra.isDaytime), weight: 0.28},
-    {value: pressureFavorability(pressureTrend), weight: 0.12},
+    {value: pressureFavorability(pressureTrend), weight: 0.12}
+  ];
+  // Fattori MODIFICATORI: influenzano la media ma non hanno potere di veto,
+  // sono rifiniture (luna, nuvolosità, corrente), non condizioni ostative.
+  const modifiers = [
     {value: moonFavorability(phase), weight: 0.10},
     {value: cloudFavorability(extra.cloud), weight: 0.08},
     {value: currentFavorability(extra.current), weight: 0.07}
   ];
-  const present = factors.filter(f => f.value != null);
+
+  const present = limiting.concat(modifiers).filter(f => f.value != null);
   if(!present.length) return null;
   const totalWeight = present.reduce((s,f) => s + f.weight, 0);
-  const weighted = present.reduce((s,f) => s + f.value * f.weight, 0);
-  return Math.max(5, Math.min(100, Math.round(weighted / totalWeight)));
+  const weightedAvg = present.reduce((s,f) => s + f.value * f.weight, 0) / totalWeight;
+
+  const presentLimiting = limiting.filter(f => f.value != null);
+  let finalScore = weightedAvg;
+  if(presentLimiting.length){
+    const worst = Math.min(...presentLimiting.map(f => f.value));
+    // Il fattore limitante peggiore fissa un tetto: anche con tutto il resto
+    // perfetto, si può recuperare solo il 20% del margine rimasto fino a 100.
+    // Un solo fattore limitante pessimo "pesa" quindi molto più di 3 fattori
+    // positivi che tenterebbero di compensarlo nella media.
+    const CEILING_SLACK = 0.2;
+    const ceiling = worst + CEILING_SLACK * (100 - worst);
+    finalScore = Math.min(weightedAvg, ceiling);
+  }
+
+  return Math.max(5, Math.min(100, Math.round(finalScore)));
 }
 
 function sunProximityInfo(date, sunTimes){
