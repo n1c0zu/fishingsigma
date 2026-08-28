@@ -2170,9 +2170,10 @@ let map, markers = {};
 function initMap(){
   map = L.map('map', {scrollWheelZoom: true}).setView([42.5, 12.5], 5);
 
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors',
     maxZoom: 19,
+    subdomains: 'abc',
     className: 'osm-base-tile'
   }).addTo(map);
 
