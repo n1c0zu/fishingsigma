@@ -1138,68 +1138,103 @@ function refreshFromFilters(){
 /* ---------------------------------------------------------
    CALCOLO INDICE PESCA EURISTICO
 --------------------------------------------------------- */
+function lerp(v, x1, y1, x2, y2){
+  if(v <= x1) return y1;
+  if(v >= x2) return y2;
+  const t = (v - x1) / (x2 - x1);
+  return y1 + t * (y2 - y1);
+}
+
+// Ogni fattore restituisce un punteggio di favorevolezza 0-100 indipendente,
+// o null se il dato non è disponibile (in tal caso viene escluso dalla media
+// pesata finale, invece di essere trattato come "neutro" e sommato).
+
+function windFavorability(wind){
+  if(wind == null) return null;
+  if(wind <= 8) return 100;
+  if(wind <= 15) return lerp(wind, 8, 100, 15, 75);
+  if(wind <= 25) return lerp(wind, 15, 75, 25, 40);
+  if(wind <= 35) return lerp(wind, 25, 40, 35, 15);
+  return 10;
+}
+
+function waveFavorability(wave){
+  if(wave == null) return null;
+  if(wave <= 0.3) return 100;
+  if(wave <= 0.6) return lerp(wave, 0.3, 100, 0.6, 75);
+  if(wave <= 1.2) return lerp(wave, 0.6, 75, 1.2, 40);
+  if(wave <= 2.0) return lerp(wave, 1.2, 40, 2.0, 15);
+  return 10;
+}
+
+// Fattore più pesante della formula: quanto siamo vicini ad alba/tramonto.
+// Pieno giorno lontano dalle transizioni (es. mezzogiorno) resta comunque
+// pescabile ma penalizzato con decisione; la notte lontana dalle transizioni
+// è penalizzata meno (restano valide diverse tecniche notturne).
+function lightFavorability(hoursFromTransition, isDaytime){
+  if(hoursFromTransition == null) return null;
+  const h = hoursFromTransition;
+  if(h <= 1) return 100;
+  if(h <= 2.5) return lerp(h, 1, 100, 2.5, 70);
+  if(isDaytime) return lerp(h, 2.5, 70, 6, 28);
+  return lerp(h, 2.5, 70, 6, 52);
+}
+
+// Penalizza l'instabilità della pressione (variazione forte in 24h, in
+// entrambe le direzioni = fronte in transito), premia la stabilità.
+// Deliberatamente non prende posizione sul dibattito "cala bene / sale bene".
+function pressureFavorability(pressureTrend){
+  if(pressureTrend == null) return null;
+  const swing = Math.abs(pressureTrend);
+  if(swing <= 0.5) return 100;
+  if(swing <= 1.5) return lerp(swing, 0.5, 100, 1.5, 75);
+  if(swing <= 3) return lerp(swing, 1.5, 75, 3, 45);
+  return 30;
+}
+
+// Massimo su novilunio/plenilunio (marea viva), minimo sui quarti (marea di
+// quadratura), gradiente continuo in mezzo — niente più soglie a scatto.
+function moonFavorability(phase){
+  if(phase == null) return null;
+  const distFromNew = Math.min(phase, 1 - phase);
+  const distFromFull = Math.abs(phase - 0.5);
+  const dist = Math.min(distFromNew, distFromFull); // 0 (piena/nuova) .. 0.25 (quarti)
+  if(dist <= 0.05) return 100;
+  if(dist <= 0.15) return lerp(dist, 0.05, 100, 0.15, 70);
+  return lerp(dist, 0.15, 70, 0.25, 50);
+}
+
+function cloudFavorability(cloud){
+  if(cloud == null) return null;
+  if(cloud >= 30 && cloud <= 80) return 100; // velato/parzialmente coperto: ideale
+  if(cloud < 30) return lerp(cloud, 0, 60, 30, 100);   // cielo sereno: luce dura
+  return lerp(cloud, 80, 100, 100, 70);                // coperto pesante
+}
+
+function currentFavorability(current){
+  if(current == null) return null;
+  if(current >= 0.5 && current <= 2.5) return 100; // flusso moderato: stimola l'attività
+  if(current < 0.5) return lerp(current, 0, 80, 0.5, 100);
+  if(current <= 4) return lerp(current, 2.5, 100, 4, 60);
+  return 40; // corrente forte: pesca difficile
+}
+
 function calculateFishingScore(wind, wave, pressureTrend, phase, extra){
   extra = extra || {};
-  const cloud = extra.cloud;       // % copertura nuvolosa (0-100)
-  const current = extra.current;   // velocità corrente km/h
-  const hoursFromTransition = extra.hoursFromTransition; // ore dalla alba/tramonto più vicina
-  const isDaytime = extra.isDaytime;
-
-  let score = 100;
-
-  // Vento: soglia di saturazione più realistica (prima azzerava già a ~20 km/h)
-  if(wind != null) score -= Math.min(40, wind * 1.7);
-
-  // Moto ondoso: idem, satura più tardi
-  if(wave != null) score -= Math.min(22, wave * 18);
-
-  // Pressione: penalizza l'INSTABILITÀ (variazioni forti in entrambe le direzioni,
-  // sintomo di fronte in transito = pesce meno attivo), premia la stabilità.
-  // Non prende posizione sul dibattito "cala bene / sale bene", che non ha
-  // consenso empirico forte.
-  if(pressureTrend != null){
-    const swing = Math.abs(pressureTrend);
-    if(swing > 3) score -= 14;        // fronte in arrivo/passaggio: instabile
-    else if(swing > 1.5) score -= 6;  // variazione moderata
-    else score += 4;                  // pressione stabile: condizione tipicamente favorevole
-  }
-
-  // Luna: boost pieno su novilunio/plenilunio (marea viva), boost ridotto sui quarti
-  if(phase != null){
-    const nearNewOrFull = (phase < 0.06 || phase > 0.94 || (phase > 0.46 && phase < 0.54));
-    const nearQuarter = (phase > 0.20 && phase < 0.30) || (phase > 0.70 && phase < 0.80);
-    if(nearNewOrFull) score += 10;
-    else if(nearQuarter) score += 4;
-  }
-
-  // Nuvolosità: cielo velato/coperto spesso favorisce l'attività di superficie
-  // (luce diffusa, meno pesce "spaventato"); sole a picco o cielo totalmente
-  // coperto con maltempo associato sono leggermente meno favorevoli.
-  if(cloud != null){
-    if(cloud >= 35 && cloud <= 85) score += 5;
-    else if(cloud < 10) score -= 3; // cielo completamente sereno, luce dura
-  }
-
-  // Corrente: un minimo di flusso stimola l'attività alimentare; una corrente
-  // troppo forte rende la pesca difficile (deriva, difficoltà di tenuta fondo)
-  if(current != null){
-    if(current >= 0.5 && current <= 2.5) score += 5;
-    else if(current > 4) score -= 8;
-  }
-
-  // Prossimità ad alba/tramonto: è il fattore più determinante per l'attività
-  // di quasi tutte le specie. Vicino alla transizione = finestra migliore;
-  // pieno giorno lontano da alba/tramonto (es. mezzogiorno con sole alto) =
-  // penalità marcata; piena notte lontana dalle transizioni = penalità lieve
-  // (alcune tecniche, es. eging notturno, restano valide).
-  if(hoursFromTransition != null){
-    if(hoursFromTransition <= 1) score += 12;
-    else if(hoursFromTransition <= 2.5) score += 5;
-    else if(isDaytime) score -= 14;
-    else score -= 4;
-  }
-
-  return Math.max(5, Math.min(100, Math.round(score)));
+  const factors = [
+    {value: windFavorability(wind), weight: 0.20},
+    {value: waveFavorability(wave), weight: 0.15},
+    {value: lightFavorability(extra.hoursFromTransition, extra.isDaytime), weight: 0.28},
+    {value: pressureFavorability(pressureTrend), weight: 0.12},
+    {value: moonFavorability(phase), weight: 0.10},
+    {value: cloudFavorability(extra.cloud), weight: 0.08},
+    {value: currentFavorability(extra.current), weight: 0.07}
+  ];
+  const present = factors.filter(f => f.value != null);
+  if(!present.length) return null;
+  const totalWeight = present.reduce((s,f) => s + f.weight, 0);
+  const weighted = present.reduce((s,f) => s + f.value * f.weight, 0);
+  return Math.max(5, Math.min(100, Math.round(weighted / totalWeight)));
 }
 
 function sunProximityInfo(date, sunTimes){
