@@ -583,10 +583,30 @@
   .spot-marker{background:transparent; border:none;}
   .spot-marker span{
     display:block; width:14px; height:14px; border-radius:50%;
-    background:rgba(217,98,43,0.55); border:2px solid #d9622b;
+    background:var(--spot-color, #d9622b); border:2px solid var(--spot-color, #d9622b);
+    opacity:0.75;
   }
-  .spot-marker.selected span{width:18px; height:18px; background:rgba(217,98,43,0.95);}
+  .spot-marker.selected span{width:18px; height:18px; opacity:1;}
+  .spot-marker.draggable-active{cursor:grab;}
+  .spot-marker.draggable-active span{
+    box-shadow:0 0 0 4px rgba(217,98,43,0.3);
+    animation:draggable-pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes draggable-pulse{
+    0%,100%{box-shadow:0 0 0 4px rgba(217,98,43,0.3);}
+    50%{box-shadow:0 0 0 8px rgba(217,98,43,0.12);}
+  }
   .spot-actions{display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;}
+  .color-swatches{display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;}
+  .color-swatch{
+    width:24px; height:24px; border-radius:50%; cursor:pointer; border:2px solid transparent;
+    padding:0; box-shadow:inset 0 0 0 1px rgba(0,0,0,0.25);
+  }
+  .color-swatch.selected{border-color:var(--foam); box-shadow:0 0 0 2px rgba(245,241,230,0.25);}
+  .chip-dot{
+    display:inline-block; width:8px; height:8px; border-radius:50%;
+    margin-right:6px; flex-shrink:0; vertical-align:middle;
+  }
 
   /* info spot */
   .spot-info{
@@ -722,6 +742,11 @@
       <div class="field">
         <label>Note / caratteristiche</label>
         <textarea id="newNotes" placeholder="Es. fondale misto, corrente da levante…"></textarea>
+      </div>
+      <div class="field">
+        <label>Colore dello spot</label>
+        <div class="color-swatches" id="colorSwatches"></div>
+        <input type="hidden" id="newColor" value="#d9622b">
       </div>
       <div style="display:flex; gap:6px; margin-top:4px;">
         <button class="btn" id="confirmAdd" style="flex:1;">Salva</button>
@@ -898,7 +923,7 @@
           <div class="map-toolbar">
             <button class="btn-outline" id="fullscreenBtn" type="button">Schermo intero</button>
             <button class="btn-outline" id="measureToggle" type="button">Misura distanza</button>
-            <span class="hint-inline">Zoom: rotellina mouse · Clic: profondità · Trascina: sposta spot · Misura: clic multipli sulla carta</span>
+            <span class="hint-inline">Zoom: rotellina mouse · Clic: profondità · Trascina: sposta lo spot in modifica · Misura: clic multipli sulla carta</span>
           </div>
           <div id="map"></div>
           <div class="depth-readout" id="depthReadout" hidden></div>
@@ -1052,6 +1077,22 @@ const TYPE_TIPS = {
   lago:["Spinning o canna fissa/feeder in base alla stagione e alla specie","Cerca canneti, erbai sommersi o legnaie che forniscono riparo al pesce","Controlla regolamenti provinciali, licenze e periodi di frega"],
   altro:["Osserva la conformazione della riva e la corrente superficiale","Confrontati con i pescatori locali per capire il comportamento stagionale","Rispetta sempre le normative sulle misure minime"]
 };
+
+const SPOT_COLORS = ["#d9622b","#c9483f","#5a7d54","#3f7d8c","#4a5fa8","#8a5ca8","#c98f2b","#8a8a8a"];
+const DEFAULT_SPOT_COLOR = "#d9622b";
+
+function renderColorSwatches(selected){
+  const box = document.getElementById('colorSwatches');
+  box.innerHTML = SPOT_COLORS.map(c=>
+    `<button type="button" class="color-swatch${c===selected?' selected':''}" data-color="${c}" style="background:${c};" title="${c}"></button>`
+  ).join('');
+  box.querySelectorAll('.color-swatch').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.getElementById('newColor').value = btn.dataset.color;
+      box.querySelectorAll('.color-swatch').forEach(b=>b.classList.toggle('selected', b===btn));
+    });
+  });
+}
 
 function degToCompass(d){
   if(d == null || isNaN(d)) return "";
@@ -1380,6 +1421,7 @@ function closeSpotForm(){
   editingSpotId = null;
   document.getElementById('addForm').classList.remove('visible');
   document.getElementById('confirmAdd').textContent = "Salva";
+  setDraggableSpot(null);
 }
 function openAddForm(lat, lon, suggestedName){
   editingSpotId = null;
@@ -1390,9 +1432,12 @@ function openAddForm(lat, lon, suggestedName){
   document.getElementById('newName').value = suggestedName || "";
   document.getElementById('newNotes').value = "";
   document.getElementById('newType').value = "spiaggia";
+  document.getElementById('newColor').value = DEFAULT_SPOT_COLOR;
+  renderColorSwatches(DEFAULT_SPOT_COLOR);
   document.getElementById('newName').focus();
   document.getElementById('addForm').scrollIntoView({behavior:'smooth', block:'nearest'});
   openSidebar();
+  setDraggableSpot(null);
 }
 function openEditForm(id){
   const spot = SPOTS.find(s=>s.id===id);
@@ -1405,9 +1450,12 @@ function openEditForm(id){
   document.getElementById('newName').value = spot.name || "";
   document.getElementById('newType').value = TYPE_LABEL[spot.type] ? spot.type : "altro";
   document.getElementById('newNotes').value = spot.notes || "";
+  document.getElementById('newColor').value = spot.color || DEFAULT_SPOT_COLOR;
+  renderColorSwatches(spot.color || DEFAULT_SPOT_COLOR);
   document.getElementById('newName').focus();
   document.getElementById('addForm').scrollIntoView({behavior:'smooth', block:'nearest'});
   openSidebar();
+  setDraggableSpot(id);
 }
 function applySpotCoords(spot, lat, lon){
   spot.lat = lat;
@@ -1421,6 +1469,7 @@ document.getElementById('confirmAdd').addEventListener('click', ()=>{
   const lon = parseFloat(document.getElementById('newLon').value);
   const type = document.getElementById('newType').value;
   const notes = document.getElementById('newNotes').value.trim();
+  const color = document.getElementById('newColor').value || DEFAULT_SPOT_COLOR;
   if(!name || isNaN(lat) || isNaN(lon)){
     alert("Inserisci un nome e coordinate valide.");
     return;
@@ -1432,11 +1481,13 @@ document.getElementById('confirmAdd').addEventListener('click', ()=>{
     spot.name = name;
     spot.type = type;
     spot.notes = notes;
+    spot.color = color;
     applySpotCoords(spot, lat, lon);
     if(markers[spot.id] && markers[spot.id].getTooltip){
       markers[spot.id].unbindTooltip();
       markers[spot.id].bindTooltip(spot.name, {direction:"top"});
     }
+    if(markers[spot.id]) markers[spot.id].setIcon(spotIcon(spot));
     saveSpotsToStorage();
     closeSpotForm();
     renderChips();
@@ -1447,7 +1498,7 @@ document.getElementById('confirmAdd').addEventListener('click', ()=>{
     }
     return;
   }
-  const spot = {id:"s"+Date.now(), name, lat, lon, type, notes};
+  const spot = {id:"s"+Date.now(), name, lat, lon, type, notes, color};
   SPOTS.push(spot);
   saveSpotsToStorage();
   closeSpotForm();
@@ -1573,7 +1624,7 @@ function renderChips(){
   dashWrap.style.display = "block";
   box.innerHTML = SPOTS.map(s=>`
     <div class="chip ${currentSpot && currentSpot.id===s.id ? 'selected':''}" data-id="${s.id}">
-      <span>${s.name}</span>
+      <span><span class="chip-dot" style="background:${s.color || DEFAULT_SPOT_COLOR};"></span>${s.name}</span>
       <div class="chip-actions">
         <button type="button" class="ed" data-ed="${s.id}" title="Modifica">
           <svg class="svg-icon" viewBox="0 0 24 24" style="width:11px; height:11px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
@@ -2481,22 +2532,29 @@ async function showDepthAt(lat, lon){
   readout.innerHTML = `<strong>Fondo: ${depthText}</strong><div class="gauge-sub">${result.source} · ${lat.toFixed(4)}, ${lon.toFixed(4)}</div>`;
 }
 
-function addMarker(spot){
-  const icon = L.divIcon({
+function spotIcon(spot){
+  const color = spot.color || DEFAULT_SPOT_COLOR;
+  return L.divIcon({
     className: 'spot-marker' + (currentSpot && currentSpot.id===spot.id ? ' selected' : ''),
-    html: '<span></span>',
+    html: `<span style="--spot-color:${escapeAttr(color)};"></span>`,
     iconSize: [18,18],
     iconAnchor: [9,9]
   });
-  const marker = L.marker([spot.lat, spot.lon], {icon, draggable:true}).addTo(map);
+}
+
+function addMarker(spot){
+  const marker = L.marker([spot.lat, spot.lon], {icon: spotIcon(spot), draggable:false}).addTo(map);
   marker.bindTooltip(spot.name, {direction:"top"});
   marker.on('click', ()=> selectSpot(spot.id));
   marker.on('dragend', ()=>{
+    if(editingSpotId !== spot.id) return; // sicurezza extra: sposta solo lo spot in modifica
     const ll = marker.getLatLng();
     const s = SPOTS.find(x=>x.id===spot.id);
     if(!s) return;
     s.lat = +ll.lat.toFixed(5);
     s.lon = +ll.lng.toFixed(5);
+    document.getElementById('newLat').value = s.lat.toFixed(4);
+    document.getElementById('newLon').value = s.lon.toFixed(4);
     saveSpotsToStorage();
     renderChips();
     if(currentSpot && currentSpot.id===s.id){
@@ -2506,6 +2564,24 @@ function addMarker(spot){
     }
   });
   markers[spot.id] = marker;
+}
+
+// Consente il trascinamento sulla mappa solo per lo spot attualmente in
+// modifica (aperto con "Modifica questo spot"): tutti gli altri marker
+// restano bloccati per evitare spostamenti accidentali.
+function setDraggableSpot(id){
+  Object.entries(markers).forEach(([sid, m])=>{
+    if(!m.dragging) return;
+    if(sid === id){
+      m.dragging.enable();
+      const el = m.getElement();
+      if(el) el.classList.add('draggable-active');
+    } else {
+      m.dragging.disable();
+      const el = m.getElement();
+      if(el) el.classList.remove('draggable-active');
+    }
+  });
 }
 
 function highlightMarker(id){
@@ -2522,7 +2598,7 @@ function renderSpotInfo(spot){
   el.innerHTML = `
     <h3>${spot.name}</h3>
     <div class="badges">
-      <span class="badge">${TYPE_LABEL[spot.type] || 'Altro'}</span>
+      <span class="badge"><span class="chip-dot" style="background:${spot.color || DEFAULT_SPOT_COLOR};"></span>${TYPE_LABEL[spot.type] || 'Altro'}</span>
       <span class="badge">${Number(spot.lat).toFixed(3)}, ${Number(spot.lon).toFixed(3)}</span>
     </div>
     ${notes ? `<p style="margin-top:10px; color:rgba(245,241,230,0.8); font-size:0.86rem;">${notes.replace(/</g,'')}</p>` : ''}
