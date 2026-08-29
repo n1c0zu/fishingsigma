@@ -271,7 +271,7 @@
   table.dash-table tr.dash-row{cursor:pointer;}
   table.dash-table tr.dash-row:hover{background:rgba(245,241,230,0.04);}
   table.dash-table tr.dash-row.selected{background:rgba(217,98,43,0.12);}
-  .score-pill{font-family:'IBM Plex Mono',monospace; font-size:0.68rem; padding:2px 7px; border-radius:12px; border:1px solid var(--line-strong); display:inline-block; font-weight:500;}
+  .score-pill{font-family:'IBM Plex Mono',monospace; font-size:0.68rem; padding:2px 7px; border-radius:12px; border:1px solid var(--line-strong); display:inline-block; font-weight:500; cursor:help;}
   .score-pill.good{border-color:var(--seaweed); color:#9fd39a; background:rgba(90,125,84,0.15);}
   .score-pill.mid{border-color:var(--rust); color:#f0a878; background:rgba(217,98,43,0.12);}
   .score-pill.low{border-color:rgba(245,241,230,0.3); color:rgba(245,241,230,0.55);}
@@ -1233,45 +1233,78 @@ function currentFavorability(current){
   return 40; // corrente forte: pesca difficile
 }
 
-function calculateFishingScore(wind, wave, pressureTrend, phase, extra){
+function evaluateFishingFactors(wind, wave, pressureTrend, phase, extra){
   extra = extra || {};
 
-  // Fattori LIMITANTI: se uno di questi è pessimo, l'uscita è compromessa a
-  // prescindere da quanto siano buoni gli altri (es. mezzogiorno pieno sole,
-  // o mare formato, "cancellano" l'effetto di condizioni altrimenti ottime).
-  const limiting = [
-    {value: windFavorability(wind), weight: 0.20},
-    {value: waveFavorability(wave), weight: 0.15},
-    {value: lightFavorability(extra.hoursFromTransition, extra.isDaytime), weight: 0.28},
-    {value: pressureFavorability(pressureTrend), weight: 0.12}
-  ];
-  // Fattori MODIFICATORI: influenzano la media ma non hanno potere di veto,
-  // sono rifiniture (luna, nuvolosità, corrente), non condizioni ostative.
-  const modifiers = [
-    {value: moonFavorability(phase), weight: 0.10},
-    {value: cloudFavorability(extra.cloud), weight: 0.08},
-    {value: currentFavorability(extra.current), weight: 0.07}
+  const factors = [
+    {key:'wind', label:'Vento', weight:0.20, limiting:true,
+      value: windFavorability(wind),
+      detail: wind != null ? `${Math.round(wind)} km/h` : null},
+    {key:'wave', label:'Moto ondoso', weight:0.15, limiting:true,
+      value: waveFavorability(wave),
+      detail: wave != null ? `${wave.toFixed(1)} m` : null},
+    {key:'light', label:'Luce (vicinanza ad alba/tramonto)', weight:0.28, limiting:true,
+      value: lightFavorability(extra.hoursFromTransition, extra.isDaytime),
+      detail: extra.hoursFromTransition != null
+        ? (extra.hoursFromTransition <= 1 ? 'in pieno periodo di transizione' : `${extra.hoursFromTransition.toFixed(1)} h da alba/tramonto`)
+        : null},
+    {key:'pressure', label:'Stabilità pressione', weight:0.12, limiting:true,
+      value: pressureFavorability(pressureTrend),
+      detail: pressureTrend != null ? `variazione ${Math.abs(pressureTrend).toFixed(1)} hPa/24h` : null},
+    {key:'moon', label:'Fase lunare', weight:0.10, limiting:false,
+      value: moonFavorability(phase),
+      detail: phase != null ? moonLabel(phase) : null},
+    {key:'cloud', label:'Nuvolosità', weight:0.08, limiting:false,
+      value: cloudFavorability(extra.cloud),
+      detail: extra.cloud != null ? `${Math.round(extra.cloud)}%` : null},
+    {key:'current', label:'Corrente', weight:0.07, limiting:false,
+      value: currentFavorability(extra.current),
+      detail: extra.current != null ? `${extra.current.toFixed(1)} km/h` : null}
   ];
 
-  const present = limiting.concat(modifiers).filter(f => f.value != null);
-  if(!present.length) return null;
+  const present = factors.filter(f => f.value != null);
+  if(!present.length) return {score: null, factors: [], worstFactor: null};
+
   const totalWeight = present.reduce((s,f) => s + f.weight, 0);
   const weightedAvg = present.reduce((s,f) => s + f.value * f.weight, 0) / totalWeight;
 
-  const presentLimiting = limiting.filter(f => f.value != null);
+  const presentLimiting = present.filter(f => f.limiting);
   let finalScore = weightedAvg;
+  let worstFactor = null;
   if(presentLimiting.length){
-    const worst = Math.min(...presentLimiting.map(f => f.value));
+    worstFactor = presentLimiting.reduce((a,b) => a.value <= b.value ? a : b);
     // Il fattore limitante peggiore fissa un tetto: anche con tutto il resto
-    // perfetto, si può recuperare solo il 20% del margine rimasto fino a 100.
-    // Un solo fattore limitante pessimo "pesa" quindi molto più di 3 fattori
-    // positivi che tenterebbero di compensarlo nella media.
+    // perfetto, si può recuperare solo il 12% del margine rimasto fino a 100.
     const CEILING_SLACK = 0.12;
-    const ceiling = worst + CEILING_SLACK * (100 - worst);
+    const ceiling = worstFactor.value + CEILING_SLACK * (100 - worstFactor.value);
     finalScore = Math.min(weightedAvg, ceiling);
   }
 
-  return Math.max(5, Math.min(100, Math.round(finalScore)));
+  const score = Math.max(5, Math.min(100, Math.round(finalScore)));
+  return {score, factors: present, worstFactor};
+}
+
+function calculateFishingScore(wind, wave, pressureTrend, phase, extra){
+  return evaluateFishingFactors(wind, wave, pressureTrend, phase, extra).score;
+}
+
+function escapeAttr(str){
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Costruisce il testo del tooltip (a capo con \n, leggibile nel title nativo)
+// che spiega quali fattori hanno determinato il punteggio e quale, se presente,
+// ha fatto da "tetto" limitante sul risultato finale.
+function scoreTooltip(wind, wave, pressureTrend, phase, extra){
+  const {score, factors, worstFactor} = evaluateFishingFactors(wind, wave, pressureTrend, phase, extra);
+  if(score === null) return 'Dati insufficienti per calcolare il punteggio.';
+  const lines = factors.map(f => {
+    const detail = f.detail ? ` (${f.detail})` : '';
+    const flag = worstFactor && f.key === worstFactor.key ? '  ← fattore limitante' : '';
+    return `${f.label}: ${Math.round(f.value)}/100${detail}${flag}`;
+  });
+  lines.push(`— Punteggio finale: ${score}/100`);
+  return lines.join('\n');
 }
 
 function sunProximityInfo(date, sunTimes){
@@ -1284,12 +1317,13 @@ function sunProximityInfo(date, sunTimes){
   return {hoursFromTransition: Math.min(hToSunrise, hToSunset), isDaytime};
 }
 
-function scorePill(score){
+function scorePill(score, tooltip){
   if(score === null || isNaN(score)) return '<span class="score-pill low">n.d.</span>';
   let cls = 'low', label = 'Difficile';
   if(score >= 80){ cls='good'; label='Ottimo'; }
   else if(score >= 58){ cls='mid'; label='Discreto'; }
-  return `<span class="score-pill ${cls}">${label} · ${score}</span>`;
+  const titleAttr = tooltip ? ` title="${escapeAttr(tooltip)}"` : '';
+  return `<span class="score-pill ${cls}"${titleAttr}>${label} · ${score}</span>`;
 }
 
 function scoreBadgeText(score){
@@ -1703,6 +1737,7 @@ function renderDashboard(spot, weather, marine){
     : {hoursFromTransition: null, isDaytime: null};
   const score = calculateFishingScore(wind, wave, pressureTrend, phase, {cloud, current: currentVel, hoursFromTransition: sunProx.hoursFromTransition, isDaytime: sunProx.isDaytime});
   const scoreText = scoreBadgeText(score);
+  const scoreTip = scoreTooltip(wind, wave, pressureTrend, phase, {cloud, current: currentVel, hoursFromTransition: sunProx.hoursFromTransition, isDaytime: sunProx.isDaytime});
 
   const trendArrow = pressureTrend > 1 ? "↗" : (pressureTrend < -1 ? "↘" : "→");
   const shadowWidth = phase <= 0.5 ? (1 - phase*2) * 100 : (phase-0.5)*2*100;
@@ -1750,11 +1785,11 @@ function renderDashboard(spot, weather, marine){
     </div>
 
     <!-- RIGA 2 (2 colonne per Indice + 3 colonne a destra) -->
-    <div class="gauge" style="grid-column: span 2;">
+    <div class="gauge" style="grid-column: span 2;" title="${escapeAttr(scoreTip)}">
       <div class="gauge-label">Indice condizioni di pesca (euristico)</div>
       <div class="gauge-value">${scoreText} <span class="mono" style="font-size:1.1rem; color:var(--rust);">(${score}/100)</span></div>
       <div class="score-bar"><div class="fill" style="width:${score}%"></div></div>
-      <div class="gauge-sub">Stima basata su vento, onda, gradiente barico e fase lunare all'orario selezionato.</div>
+      <div class="gauge-sub">Stima basata su vento, onda, gradiente barico e fase lunare all'orario selezionato. Passa il mouse per il dettaglio.</div>
     </div>
 
     <div class="gauge">
@@ -1986,6 +2021,8 @@ function renderOutlook7(spot, weather, marine){
 
     const amScore = calculateFishingScore(amWind, amWave, 0, dayPhase, {hoursFromTransition: 0.5, isDaytime: true});
     const pmScore = calculateFishingScore(pmWind, pmWave, 0, dayPhase, {hoursFromTransition: 0.5, isDaytime: true});
+    const amTip = scoreTooltip(amWind, amWave, 0, dayPhase, {hoursFromTransition: 0.5, isDaytime: true});
+    const pmTip = scoreTooltip(pmWind, pmWave, 0, dayPhase, {hoursFromTransition: 0.5, isDaytime: true});
 
     let hIdx = h.time.findIndex(t => t.startsWith(dayStr) && t.endsWith("13:00"));
     if(hIdx < 0) hIdx = h.time.findIndex(t => t.startsWith(dayStr));
@@ -1999,11 +2036,11 @@ function renderOutlook7(spot, weather, marine){
       <td>${WMO[code] || '—'}</td>
       <td class="mono">${Math.round(d.temperature_2m_min[i])}° / ${Math.round(d.temperature_2m_max[i])}°</td>
       <td class="mono">
-        ${scorePill(amScore)}
+        ${scorePill(amScore, amTip)}
         <span style="font-size:0.72rem; opacity:0.8; margin-left:4px;">${amWind!==null?Math.round(amWind)+'km/h':''}${amWave!==null?' · '+amWave.toFixed(1)+'m':''}</span>
       </td>
       <td class="mono">
-        ${scorePill(pmScore)}
+        ${scorePill(pmScore, pmTip)}
         <span style="font-size:0.72rem; opacity:0.8; margin-left:4px;">${pmWind!==null?Math.round(pmWind)+'km/h':''}${pmWave!==null?' · '+pmWave.toFixed(1)+'m':''}</span>
       </td>
       <td class="mono">${d.uv_index_max ? d.uv_index_max[i].toFixed(1) : '—'}</td>
@@ -2062,6 +2099,7 @@ function renderDayDetail(spot, weather, marine, dateVal){
   const amCurrent = avgCurrentWindow(amFrom, amTo);
   const amCloud = h.cloud_cover ? avgWindow(h.cloud_cover, amFrom, amTo) : null;
   const amScore = calculateFishingScore(amWind, amWave, 0, dayPhase, {cloud: amCloud, current: amCurrent, hoursFromTransition: 0.5, isDaytime: true});
+  const amTip = scoreTooltip(amWind, amWave, 0, dayPhase, {cloud: amCloud, current: amCurrent, hoursFromTransition: 0.5, isDaytime: true});
 
   const pmWind = avgWindow(h.wind_speed_10m, pmFrom, pmTo);
   const pmGust = avgWindow(h.wind_gusts_10m, pmFrom, pmTo);
@@ -2070,6 +2108,7 @@ function renderDayDetail(spot, weather, marine, dateVal){
   const pmCurrent = avgCurrentWindow(pmFrom, pmTo);
   const pmCloud = h.cloud_cover ? avgWindow(h.cloud_cover, pmFrom, pmTo) : null;
   const pmScore = calculateFishingScore(pmWind, pmWave, 0, dayPhase, {cloud: pmCloud, current: pmCurrent, hoursFromTransition: 0.5, isDaytime: true});
+  const pmTip = scoreTooltip(pmWind, pmWave, 0, dayPhase, {cloud: pmCloud, current: pmCurrent, hoursFromTransition: 0.5, isDaytime: true});
 
   dayContainer.innerHTML = `
     <div class="day-windows-grid">
@@ -2083,7 +2122,7 @@ function renderDayDetail(spot, weather, marine, dateVal){
             </div>
             <div class="window-card-time">${fmtTime(amFrom)} – ${fmtTime(amTo)} (Alba ${fmtTime(sunTimes.sunrise)})</div>
           </div>
-          <div>${scorePill(amScore)}</div>
+          <div>${scorePill(amScore, amTip)}</div>
         </div>
         <div class="window-stats-grid">
           <div class="w-stat"><span class="lbl">Vento medio</span><span class="val">${amWind!==null?Math.round(amWind)+' km/h':'—'}</span></div>
@@ -2105,7 +2144,7 @@ function renderDayDetail(spot, weather, marine, dateVal){
             </div>
             <div class="window-card-time">${fmtTime(pmFrom)} – ${fmtTime(pmTo)} (Tramonto ${fmtTime(sunTimes.sunset)})</div>
           </div>
-          <div>${scorePill(pmScore)}</div>
+          <div>${scorePill(pmScore, pmTip)}</div>
         </div>
         <div class="window-stats-grid">
           <div class="w-stat"><span class="lbl">Vento medio</span><span class="val">${pmWind!==null?Math.round(pmWind)+' km/h':'—'}</span></div>
@@ -2144,10 +2183,11 @@ function renderDayDetail(spot, weather, marine, dateVal){
     const hCloud = h.cloud_cover ? h.cloud_cover[i] : null;
     const hSunProx = sunProximityInfo(new Date(t), sunTimes);
     const hScore = calculateFishingScore(h.wind_speed_10m[i], wave, pTrend, hourPhase, {cloud: hCloud, current: currentVel, hoursFromTransition: hSunProx.hoursFromTransition, isDaytime: hSunProx.isDaytime});
+    const hTip = scoreTooltip(h.wind_speed_10m[i], wave, pTrend, hourPhase, {cloud: hCloud, current: currentVel, hoursFromTransition: hSunProx.hoursFromTransition, isDaytime: hSunProx.isDaytime});
 
     return `<tr>
       <td class="mono"><strong>${t.slice(11,16)}</strong></td>
-      <td>${scorePill(hScore)}</td>
+      <td>${scorePill(hScore, hTip)}</td>
       <td>${WMO[h.weather_code[i]] || '—'}</td>
       <td class="mono">${Math.round(h.temperature_2m[i])}°</td>
       <td class="mono">${Math.round(h.wind_speed_10m[i])} km/h ${degToCompass(h.wind_direction_10m[i])}</td>
@@ -2290,11 +2330,13 @@ async function computeAllScores(){
 
       const amScore = calculateFishingScore(amWind, amWave, 0, dayPhase, {hoursFromTransition: 0.5, isDaytime: true});
       const pmScore = calculateFishingScore(pmWind, pmWave, 0, dayPhase, {hoursFromTransition: 0.5, isDaytime: true});
+      const amTip = scoreTooltip(amWind, amWave, 0, dayPhase, {hoursFromTransition: 0.5, isDaytime: true});
+      const pmTip = scoreTooltip(pmWind, pmWave, 0, dayPhase, {hoursFromTransition: 0.5, isDaytime: true});
 
       const amCell = document.getElementById('score-am-'+spot.id);
       const pmCell = document.getElementById('score-pm-'+spot.id);
-      if(amCell) amCell.innerHTML = scorePill(amScore);
-      if(pmCell) pmCell.innerHTML = scorePill(pmScore);
+      if(amCell) amCell.innerHTML = scorePill(amScore, amTip);
+      if(pmCell) pmCell.innerHTML = scorePill(pmScore, pmTip);
     }catch(e){
       const amCell = document.getElementById('score-am-'+spot.id);
       const pmCell = document.getElementById('score-pm-'+spot.id);
